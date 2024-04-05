@@ -38,13 +38,14 @@ KEM_SCHEMES := \
 SIGN_SCHEMES := \
 	crypto_sign/perk-192-short-5/m4 \
 	crypto_sign/haetae3/m4f \
-	crypto_sign/faest-em-128f/ref \
+	crypto_sign/faest_128f/ref \
 	crypto_sign/perk-128-short-3/m4 \
 	crypto_sign/ov-Ip-pkc/m4fstack \
 	crypto_sign/ov-Ip-pkc/m4fspeed \
 	crypto_sign/perk-256-fast-5/m4 \
 	crypto_sign/faest-128f/ref \
 	crypto_sign/ov-Ip/m4f \
+	crypto_sign/faest_192f/ref \
 	crypto_sign/perk-256-fast-3/m4 \
 	crypto_sign/haetae2/m4f \
 	crypto_sign/mayo3/m4f \
@@ -60,6 +61,7 @@ SIGN_SCHEMES := \
 	crypto_sign/perk-192-fast-3/m4 \
 	crypto_sign/perk-128-fast-3/m4 \
 	crypto_sign/perk-128-fast-5/m4 \
+	crypto_sign/faest_em_128f/ref \
 	crypto_sign/mayo1/m4f \
 	crypto_sign/perk-192-fast-5/m4 \
 	crypto_sign/perk-128-short-5/m4 \

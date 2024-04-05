@@ -1,0 +1,2 @@
+#define HAVE_RANDOMBYTES
+#define PQCLEAN
