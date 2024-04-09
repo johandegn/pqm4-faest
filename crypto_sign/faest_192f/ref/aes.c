@@ -1,10 +1,11 @@
+#include "config.h"
 /*
  *  SPDX-License-Identifier: MIT
  */
 
-//#if defined(HAVE_CONFIG_H)
+#if defined(HAVE_CONFIG_H)
 #include <config.h>
-//#endif
+#endif
 
 #include "aes.h"
 

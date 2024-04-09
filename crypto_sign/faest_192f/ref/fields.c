@@ -75,14 +75,65 @@ bf64_t bf64_rand(void) {
   return ret;
 }
 
-bf64_t bf64_mul(bf64_t lhs, bf64_t rhs) {
-  bf64_t result = 0;
-  for (unsigned int idx = 64; idx; --idx, rhs >>= 1) {
-    result ^= (-(rhs & 1)) & lhs;
-    const uint64_t mask = -((lhs >> 63) & 1);
-    lhs                 = (lhs << 1) ^ (mask & bf64_modulus);
+static inline bf64_t bf64_reduce(uint64_t C[2]) {
+  C[0] ^= C[1];
+  C[0] ^= C[1] << 1;
+  C[0] ^= C[1] << 3;
+  C[0] ^= C[1] << 4;
+  uint64_t tmp = 0;
+  tmp ^= C[1] >> 63;
+  tmp ^= C[1] >> 61;
+  tmp ^= C[1] >> 60;
+
+  C[0] ^= tmp;
+  C[0] ^= tmp << 1;
+  C[0] ^= tmp << 3;
+  C[0] ^= tmp << 4;
+
+  return C[0];
+}
+
+ATTR_CONST static inline bf64_t bf64_shift_left_1_modulus(bf64_t value) {
+  const uint64_t mask = -((value >> 63) & 1);
+  return (value << 1) ^ (mask & bf64_modulus);
+}
+
+#define bf64_mul_w 4
+#define bf64_mul_u_amount (2 << (bf64_mul_w - 1))
+
+bf64_t bf64_mul(bf64_t a, bf64_t b) {
+  // step 1
+  bf64_t B[bf64_mul_u_amount];
+  B[0] = bf64_zero();
+  B[1] = b;
+  for (unsigned int i = 0; i < bf64_mul_w - 1; i++) {
+    B[2 << i] = bf64_shift_left_1_modulus(B[1 << i]);
+    for (unsigned int j = 1; j < (2U << i); j++) {
+      B[(2 << i) + j] = bf64_add(B[2 << i], B[j]);
+    }
   }
-  return result;
+
+  // step 2
+  uint64_t C[2] = {0};
+
+  const unsigned int W      = 64;
+  const unsigned int u_mask = bf64_mul_u_amount - 1;
+  // step 3
+  for (int k = (W / bf64_mul_w) - 1; k >= 0; k--) {
+    // step 3.1
+    unsigned int u = (a >> (bf64_mul_w * k)) & u_mask;
+
+    // Add to C{j}
+    C[0] ^= B[u];
+
+    // step 3.2
+    if (k != 0) {
+      C[1] = (C[1] << bf64_mul_w) | (C[0] >> (W - bf64_mul_w));
+      C[0] = C[0] << bf64_mul_w;
+    }
+  }
+
+  return bf64_reduce(C);
 }
 
 #define bf64_bit_to_mask(value, bit) -((((uint64_t)(value)) >> (bit)) & 1)
@@ -194,28 +245,81 @@ static inline uint64_t bf128_bit_to_uint64_mask(bf128_t value, unsigned int bit)
   return -((BF_VALUE(value, byte_idx) >> bit_idx) & 1);
 }
 
-bf128_t bf128_mul(bf128_t lhs, bf128_t rhs) {
-  bf128_t result = {0};
-  for (unsigned int idx = 0; idx != 128 - 1; ++idx) {
-    result = bf128_add(result, bf128_and_64(lhs, bf128_bit_to_uint64_mask(rhs, idx)));
+static inline bf128_t bf128_reduce(uint64_t C[4]) {
+  C[1] ^= C[3];
+  C[1] ^= C[3] << 1;
+  C[1] ^= C[3] << 2;
+  C[1] ^= C[3] << 7;
+  C[2] ^= C[3] >> 63;
+  C[2] ^= C[3] >> 62;
+  C[2] ^= C[3] >> 57;
 
-    const uint64_t mask = bf128_bit_to_uint64_mask(lhs, 128 - 1);
-    lhs                 = bf128_shift_left_1(lhs);
-    BF_VALUE(lhs, 0) ^= (mask & bf128_modulus);
+  C[0] ^= C[2];
+  C[0] ^= C[2] << 1;
+  C[0] ^= C[2] << 2;
+  C[0] ^= C[2] << 7;
+  C[1] ^= C[2] >> 63;
+  C[1] ^= C[2] >> 62;
+  C[1] ^= C[2] >> 57;
+
+  bf128_t r = {{C[0], C[1]}};
+  return r;
+}
+
+ATTR_CONST static inline bf128_t bf128_shift_left_1_modulus(bf128_t value) {
+  const uint64_t mask = bf128_bit_to_uint64_mask(value, 128 - 1);
+  value               = bf128_shift_left_1(value);
+  BF_VALUE(value, 0) ^= (mask & bf128_modulus);
+  return value;
+}
+
+#define bf128_mul_w 4
+#define bf128_mul_u_amount (2 << (bf128_mul_w - 1))
+
+bf128_t bf128_mul(bf128_t a, bf128_t b) {
+  // step 1
+  bf128_t B[bf128_mul_u_amount];
+  B[0] = bf128_zero();
+  B[1] = b;
+  for (unsigned int i = 0; i < bf128_mul_w - 1; i++) {
+    B[2 << i] = bf128_shift_left_1_modulus(B[1 << i]);
+    for (unsigned int j = 1; j < (2U << i); j++) {
+      B[(2 << i) + j] = bf128_add(B[2 << i], B[j]);
+    }
   }
-  return bf128_add(result, bf128_and_64(lhs, bf128_bit_to_uint64_mask(rhs, 128 - 1)));
+
+  // step 2
+  uint64_t C[4] = {0};
+
+  const unsigned int m      = 128;
+  const unsigned int W      = 64;
+  const unsigned int t      = (m + W - 1) / W;
+  const unsigned int u_mask = bf128_mul_u_amount - 1;
+  // step 3
+  for (int k = (W / bf128_mul_w) - 1; k >= 0; k--) {
+    // step 3.1
+    for (unsigned int j = 0; j <= t - 1; j++) {
+      uint64_t A_j   = a.values[j];
+      unsigned int u = (A_j >> (bf128_mul_w * k)) & u_mask;
+
+      // Add to C{j}
+      C[j + 0] ^= B[u].values[0];
+      C[j + 1] ^= B[u].values[1];
+    }
+    // step 3.2
+    if (k != 0) {
+      C[3] = (C[3] << bf128_mul_w) | (C[2] >> (W - bf128_mul_w));
+      C[2] = (C[2] << bf128_mul_w) | (C[1] >> (W - bf128_mul_w));
+      C[1] = (C[1] << bf128_mul_w) | (C[0] >> (W - bf128_mul_w));
+      C[0] = C[0] << bf128_mul_w;
+    }
+  }
+
+  return bf128_reduce(C);
 }
 
 bf128_t bf128_mul_64(bf128_t lhs, bf64_t rhs) {
-  bf128_t result = {0};
-  for (unsigned int idx = 0; idx != 64 - 1; ++idx) {
-    result = bf128_add(result, bf128_and_64(lhs, bf64_bit_to_mask(rhs, idx)));
-
-    const uint64_t mask = bf128_bit_to_uint64_mask(lhs, 128 - 1);
-    lhs                 = bf128_shift_left_1(lhs);
-    BF_VALUE(lhs, 0) ^= (mask & bf128_modulus);
-  }
-  return bf128_add(result, bf128_and_64(lhs, bf64_bit_to_mask(rhs, 64 - 1)));
+  return bf128_mul(lhs, (bf128_t){{rhs, 0}});
 }
 
 #if !defined(HAVE_ATTR_VECTOR_SIZE)
@@ -368,28 +472,92 @@ static inline uint64_t bf192_bit_to_uint64_mask(bf192_t value, unsigned int bit)
   return -((BF_VALUE(value, byte_idx) >> bit_idx) & 1);
 }
 
-bf192_t bf192_mul(bf192_t lhs, bf192_t rhs) {
-  bf192_t result = {0};
-  for (unsigned int idx = 0; idx != 192 - 1; ++idx) {
-    result = bf192_add(result, bf192_and_64(lhs, bf192_bit_to_uint64_mask(rhs, idx)));
+static inline bf192_t bf192_reduce(uint64_t C[6]) {
+  C[2] ^= C[5];
+  C[2] ^= C[5] << 1;
+  C[2] ^= C[5] << 2;
+  C[2] ^= C[5] << 7;
+  C[3] ^= C[5] >> 63;
+  C[3] ^= C[5] >> 62;
+  C[3] ^= C[5] >> 57;
 
-    const uint64_t mask = bf192_bit_to_uint64_mask(lhs, 192 - 1);
-    lhs                 = bf192_shift_left_1(lhs);
-    BF_VALUE(lhs, 0) ^= (mask & bf192_modulus);
+  C[1] ^= C[4];
+  C[1] ^= C[4] << 1;
+  C[1] ^= C[4] << 2;
+  C[1] ^= C[4] << 7;
+  C[2] ^= C[4] >> 63;
+  C[2] ^= C[4] >> 62;
+  C[2] ^= C[4] >> 57;
+
+  C[0] ^= C[3];
+  C[0] ^= C[3] << 1;
+  C[0] ^= C[3] << 2;
+  C[0] ^= C[3] << 7;
+  C[1] ^= C[3] >> 63;
+  C[1] ^= C[3] >> 62;
+  C[1] ^= C[3] >> 57;
+  
+  bf192_t r = {{C[0], C[1], C[2]}};
+  return r;
+}
+
+ATTR_CONST static inline bf192_t bf192_shift_left_1_modulus(bf192_t value) {
+  const uint64_t mask = bf192_bit_to_uint64_mask(value, 192 - 1);
+  value               = bf192_shift_left_1(value);
+  BF_VALUE(value, 0) ^= (mask & bf192_modulus);
+  return value;
+}
+
+#define bf192_mul_w 4
+#define bf192_mul_u_amount (2 << (bf192_mul_w - 1))
+
+bf192_t bf192_mul(bf192_t a, bf192_t b) {
+  // step 1
+  bf192_t B[bf192_mul_u_amount];
+  B[0] = bf192_zero();
+  B[1] = b;
+  for (unsigned int i = 0; i < bf192_mul_w - 1; i++) {
+    B[2 << i] = bf192_shift_left_1_modulus(B[1 << i]);
+    for (unsigned int j = 1; j < (2U << i); j++) {
+      B[(2 << i) + j] = bf192_add(B[2 << i], B[j]);
+    }
   }
-  return bf192_add(result, bf192_and_64(lhs, bf192_bit_to_uint64_mask(rhs, 192 - 1)));
+
+  // step 2
+  uint64_t C[6] = {0};
+
+  const unsigned int m      = 192;
+  const unsigned int W      = 64;
+  const unsigned int t      = (m + W - 1) / W;
+  const unsigned int u_mask = bf192_mul_u_amount - 1;
+  // step 3
+  for (int k = (W / bf192_mul_w) - 1; k >= 0; k--) {
+    // step 3.1
+    for (unsigned int j = 0; j <= t - 1; j++) {
+      uint64_t A_j   = a.values[j];
+      unsigned int u = (A_j >> (bf192_mul_w * k)) & u_mask;
+
+      // Add to C{j}
+      C[j + 0] ^= B[u].values[0];
+      C[j + 1] ^= B[u].values[1];
+      C[j + 2] ^= B[u].values[2];
+    }
+    // step 3.2
+    if (k != 0) {
+      C[5] = (C[5] << bf192_mul_w) | (C[4] >> (W - bf192_mul_w));
+      C[4] = (C[4] << bf192_mul_w) | (C[3] >> (W - bf192_mul_w));
+      C[3] = (C[3] << bf192_mul_w) | (C[2] >> (W - bf192_mul_w));
+      C[2] = (C[2] << bf192_mul_w) | (C[1] >> (W - bf192_mul_w));
+      C[1] = (C[1] << bf192_mul_w) | (C[0] >> (W - bf192_mul_w));
+      C[0] = C[0] << bf192_mul_w;
+    }
+  }
+
+  return bf192_reduce(C);
 }
 
 bf192_t bf192_mul_64(bf192_t lhs, bf64_t rhs) {
-  bf192_t result = {0};
-  for (unsigned int idx = 0; idx != 64 - 1; ++idx) {
-    result = bf192_add(result, bf192_and_64(lhs, bf64_bit_to_mask(rhs, idx)));
-
-    const uint64_t mask = bf192_bit_to_uint64_mask(lhs, 192 - 1);
-    lhs                 = bf192_shift_left_1(lhs);
-    BF_VALUE(lhs, 0) ^= (mask & bf192_modulus);
-  }
-  return bf192_add(result, bf192_and_64(lhs, bf64_bit_to_mask(rhs, 64 - 1)));
+  return bf192_mul(lhs, (bf192_t){{rhs, 0, 0}});
 }
 
 #if !defined(HAVE_ATTR_VECTOR_SIZE)
@@ -548,42 +716,134 @@ ATTR_CONST ATTR_ALWAYS_INLINE static inline uint64_t bf256_bit_to_uint64_mask(bf
   return -((BF_VALUE(value, byte_idx) >> bit_idx) & 1);
 }
 
-bf256_t bf256_mul(bf256_t lhs, bf256_t rhs) {
+static inline bf256_t bf256_reduce(uint64_t C[8]) {
+  C[3] ^= C[7];
+  C[3] ^= C[7] << 2;
+  C[3] ^= C[7] << 5;
+  C[3] ^= C[7] << 10;
+  C[4] ^= C[7] >> 62;
+  C[4] ^= C[7] >> 59;
+  C[4] ^= C[7] >> 54;
+
+  C[2] ^= C[6];
+  C[2] ^= C[6] << 2;
+  C[2] ^= C[6] << 5;
+  C[2] ^= C[6] << 10;
+  C[3] ^= C[6] >> 62;
+  C[3] ^= C[6] >> 59;
+  C[3] ^= C[6] >> 54;
+
+  C[1] ^= C[5];
+  C[1] ^= C[5] << 2;
+  C[1] ^= C[5] << 5;
+  C[1] ^= C[5] << 10;
+  C[2] ^= C[5] >> 62;
+  C[2] ^= C[5] >> 59;
+  C[2] ^= C[5] >> 54;
+
+  C[0] ^= C[4];
+  C[0] ^= C[4] << 2;
+  C[0] ^= C[4] << 5;
+  C[0] ^= C[4] << 10;
+  C[1] ^= C[4] >> 62;
+  C[1] ^= C[4] >> 59;
+  C[1] ^= C[4] >> 54;
+  
+  bf256_t r = {{C[0], C[1], C[2], C[3]}};
+  return r;
+}
+
+ATTR_CONST static inline bf256_t bf256_shift_left_1_modulus(bf256_t value) {
+  const uint64_t mask = bf256_bit_to_uint64_mask(value, 256 - 1);
+  value               = bf256_shift_left_1(value);
+  BF_VALUE(value, 0) ^= (mask & bf256_modulus);
+  return value;
+}
+
+
 #if defined(HAVE_ATTR_VECTOR_SIZE)
+bf256_t bf256_mul(bf256_t lhs, bf256_t rhs) {
   const bf256_t mod = BF256C(bf256_modulus, 0, 0, 0);
-#endif
   bf256_t result = {0};
   for (unsigned int idx = 0; idx != 256 - 1; ++idx) {
     result = bf256_add(result, bf256_and_64(lhs, bf256_bit_to_uint64_mask(rhs, idx)));
 
     const uint64_t mask = bf256_bit_to_uint64_mask(lhs, 256 - 1);
     lhs                 = bf256_shift_left_1(lhs);
-#if defined(HAVE_ATTR_VECTOR_SIZE)
     lhs ^= bf256_and_64(mod, mask);
-#else
-    BF_VALUE(lhs, 0) ^= mask & bf256_modulus;
-#endif
   }
   return bf256_add(result, bf256_and_64(lhs, bf256_bit_to_uint64_mask(rhs, 256 - 1)));
 }
+#else
+
+#define bf256_mul_w 4
+#define bf256_mul_u_amount (2 << (bf256_mul_w - 1))
+
+bf256_t bf256_mul(bf256_t a, bf256_t b) {
+  // step 1
+  bf256_t B[bf256_mul_u_amount];
+  B[0] = bf256_zero();
+  B[1] = b;
+  for (unsigned int i = 0; i < bf256_mul_w - 1; i++) {
+    B[2 << i] = bf256_shift_left_1_modulus(B[1 << i]);
+    for (unsigned int j = 1; j < (2U << i); j++) {
+      B[(2 << i) + j] = bf256_add(B[2 << i], B[j]);
+    }
+  }
+
+  // step 2
+  uint64_t C[8] = {0};
+
+  const unsigned int m      = 256;
+  const unsigned int W      = 64;
+  const unsigned int t      = (m + W - 1) / W;
+  const unsigned int u_mask = bf256_mul_u_amount - 1;
+  // step 3
+  for (int k = (W / bf256_mul_w) - 1; k >= 0; k--) {
+    // step 3.1
+    for (unsigned int j = 0; j <= t - 1; j++) {
+      uint64_t A_j   = a.values[j];
+      unsigned int u = (A_j >> (bf256_mul_w * k)) & u_mask;
+
+      // Add to C{j}
+      C[j + 0] ^= B[u].values[0];
+      C[j + 1] ^= B[u].values[1];
+      C[j + 2] ^= B[u].values[2];
+      C[j + 3] ^= B[u].values[3];
+    }
+    // step 3.2
+    if (k != 0) {
+      C[7] = (C[7] << bf256_mul_w) | (C[6] >> (W - bf256_mul_w));
+      C[6] = (C[6] << bf256_mul_w) | (C[5] >> (W - bf256_mul_w));
+      C[5] = (C[5] << bf256_mul_w) | (C[4] >> (W - bf256_mul_w));
+      C[4] = (C[4] << bf256_mul_w) | (C[3] >> (W - bf256_mul_w));
+      C[3] = (C[3] << bf256_mul_w) | (C[2] >> (W - bf256_mul_w));
+      C[2] = (C[2] << bf256_mul_w) | (C[1] >> (W - bf256_mul_w));
+      C[1] = (C[1] << bf256_mul_w) | (C[0] >> (W - bf256_mul_w));
+      C[0] = C[0] << bf256_mul_w;
+    }
+  }
+
+  return bf256_reduce(C);
+}
+#endif
 
 bf256_t bf256_mul_64(bf256_t lhs, bf64_t rhs) {
 #if defined(HAVE_ATTR_VECTOR_SIZE)
   const bf256_t mod = BF256C(bf256_modulus, 0, 0, 0);
-#endif
+
   bf256_t result = {0};
   for (unsigned int idx = 0; idx != 64 - 1; ++idx) {
     result = bf256_add(result, bf256_and_64(lhs, bf64_bit_to_mask(rhs, idx)));
 
     const uint64_t mask = bf256_bit_to_uint64_mask(lhs, 256 - 1);
     lhs                 = bf256_shift_left_1(lhs);
-#if defined(HAVE_ATTR_VECTOR_SIZE)
     lhs ^= bf256_and_64(mod, mask);
-#else
-    BF_VALUE(lhs, 0) ^= mask & bf256_modulus;
-#endif
   }
   return bf256_add(result, bf256_and_64(lhs, bf64_bit_to_mask(rhs, 64 - 1)));
+#else
+  return bf256_mul(lhs, (bf256_t){{rhs, 0, 0, 0}});
+#endif
 }
 
 #if !defined(HAVE_ATTR_VECTOR_SIZE)

@@ -248,4 +248,5 @@ void get_sd_com_rec(vec_com_rec_t* vec_com_rec, const uint8_t* iv, uint32_t lamb
   }
 
   H0(node, lambda, iv, sd, com);
+  //free(children);
 }

@@ -281,7 +281,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
 
   vbb_t vbb;
   // TODO: find a solution for setting argument (dynamic or static)?
-  const unsigned int len = ell_hat/2;
+  const unsigned int len = 2000;
   uint8_t* hcom          = alloca(MAX_LAMBDA_BYTES * 2);
   uint8_t* u             = alloca(ell_hat / 8);
   uint8_t* v_cache       = alloca(len * lambdaBytes);
@@ -354,7 +354,7 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
   const unsigned int ell_hat     = l + lambda * 2 + UNIVERSAL_HASH_B_BITS;
 
   vbb_t vbb;
-  const unsigned int len = ell_hat/2;
+  const unsigned int len = 2000;
   uint8_t* hcom          = alloca(MAX_LAMBDA_BYTES * 2);
   uint8_t* q_cache       = alloca(len * lambdaBytes);
   uint8_t* Dtilde_buf    = alloca(lambdaBytes + UNIVERSAL_HASH_B);

@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  *  SPDX-License-Identifier: MIT
  */
@@ -7,7 +8,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "config.h"
+
 #include "macros.h"
 #include "endian_compat.h"
 

@@ -1,10 +1,11 @@
+#include "config.h"
 /*
  *  SPDX-License-Identifier: MIT
  */
 
-//#ifdef HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #include <config.h>
-//#endif
+#endif
 
 #include "randomness.h"
 #include "macros.h"
