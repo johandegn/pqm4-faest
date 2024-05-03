@@ -120,9 +120,9 @@ int main() {
     }
     fprintf(fp_rsp, "mlen = %llu\n", mlen);
 
-    m  = (unsigned char*)alloca(mlen * sizeof(unsigned char));
-    m1 = (unsigned char*)alloca((mlen + CRYPTO_BYTES) * sizeof(unsigned char));
-    sm = (unsigned char*)alloca((mlen + CRYPTO_BYTES) * sizeof(unsigned char));
+    m  = (unsigned char*)calloc(mlen, sizeof(unsigned char));
+    m1 = (unsigned char*)calloc(mlen + CRYPTO_BYTES, sizeof(unsigned char));
+    sm = (unsigned char*)calloc(mlen + CRYPTO_BYTES, sizeof(unsigned char));
 
     if (!ReadHex(fp_req, m, (int)mlen, "msg = ")) {
       printf("ERROR: unable to read 'msg' from <%s>\n", fn_req);
@@ -161,9 +161,9 @@ int main() {
       return KAT_CRYPTO_FAILURE;
     }
 
-    //free(m);
-    //free(m1);
-    //free(sm);
+    free(m);
+    free(m1);
+    free(sm);
 
   } while (!done);
 
