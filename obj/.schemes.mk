@@ -37,11 +37,16 @@ KEM_SCHEMES := \
 
 SIGN_SCHEMES := \
 	crypto_sign/dilithium5/m4f \
+	crypto_sign/faest_256f/ref \
+	crypto_sign/faest_em_192s/ref \
 	crypto_sign/mayo3/m4f \
 	crypto_sign/faest_192f/ref \
+	crypto_sign/faest_em_128s/ref \
 	crypto_sign/haetae2/m4f \
 	crypto_sign/dilithium3/m4f \
 	crypto_sign/perk-192-fast-3/m4 \
+	crypto_sign/faest_192s/ref \
+	crypto_sign/faest_128s/ref \
 	crypto_sign/perk-256-fast-5/m4 \
 	crypto_sign/perk-256-short-5/m4 \
 	crypto_sign/falcon-512-tree/m4-ct \
@@ -53,6 +58,7 @@ SIGN_SCHEMES := \
 	crypto_sign/perk-192-short-5/m4 \
 	crypto_sign/falcon-1024/m4-ct \
 	crypto_sign/perk-192-short-3/m4 \
+	crypto_sign/faest_em_256f/ref \
 	crypto_sign/ov-Ip/m4f \
 	crypto_sign/perk-128-short-3/m4 \
 	crypto_sign/haetae3/m4f \
@@ -67,7 +73,10 @@ SIGN_SCHEMES := \
 	crypto_sign/mayo2/m4f \
 	crypto_sign/dilithium2/m4f \
 	crypto_sign/faest_em_128f/ref \
+	crypto_sign/faest_em_256s/ref \
 	crypto_sign/perk-256-fast-3/m4 \
+	crypto_sign/faest_256s/ref \
+	crypto_sign/faest_em_192f/ref \
 	crypto_sign/perk-128-fast-3/m4 \
 	mupq/crypto_sign/mirith_Ib_short/ref \
 	mupq/crypto_sign/mirith_Ia_fast/ref \

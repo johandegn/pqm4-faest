@@ -16,11 +16,6 @@
 #include "universal_hashing.h"
 #include "vbb.h"
 
-// TODO remove includes
-#include <string.h>
-#include <stdio.h>
-#include "util.h"
-
 // helpers to compute position in signature (sign)
 
 ATTR_PURE static inline uint8_t* signature_c(uint8_t* base_ptr, unsigned int index,
@@ -269,6 +264,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
 
   uint8_t rootkey[MAX_LAMBDA_BYTES];
   {
+#ifdef KECCAK_MASK_NONE
     H3_context_t h3_ctx;
     H3_init(&h3_ctx, lambda);
     H3_update(&h3_ctx, owf_key, lambdaBytes);
@@ -277,6 +273,37 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
       H3_update(&h3_ctx, rho, rholen);
     }
     H3_final(&h3_ctx, rootkey, lambdaBytes, signature_iv(sig, params));
+#else
+	uint8_t rootkey_share[MAX_LAMBDA_BYTES] = { 0 };
+	uint8_t owf_key_share0[MAX_LAMBDA_BYTES] = { 0 };
+	uint8_t owf_key_share1[MAX_LAMBDA_BYTES] = { 0 };
+	uint8_t mu_share[2 * MAX_LAMBDA_BYTES] = { 0 };
+	uint8_t rho_share[MAX_LAMBDA_BYTES] = { 0 };
+	uint8_t iv_share[16] = { 0 };
+	uint8_t* rootkey_shares[2] = {rootkey, rootkey_share};
+	uint8_t* iv_shares[2] = {signature_iv(sig, params), iv_share};
+	const uint8_t* owf_key_shares[2] = {owf_key_share0, owf_key_share1};
+	const uint8_t* mu_shares[2] = {mu, mu_share};
+	const uint8_t* rho_shares[2] = {rho, rho_share};
+    H3_context_t h3_ctx;
+	rand_mask(owf_key_share0, lambdaBytes);
+	for (size_t i = 0; i < lambdaBytes; i++) {
+		owf_key_share1[i] = owf_key[i] ^ owf_key_share0[i];
+	}
+    H3_init(&h3_ctx, lambda);
+    H3_update(&h3_ctx, owf_key_shares, lambdaBytes);
+    H3_update(&h3_ctx, mu_shares, lambdaBytes * 2);
+    if (rho && rholen) {
+      H3_update(&h3_ctx, rho_shares, rholen);
+    }
+    H3_final(&h3_ctx, rootkey_shares, lambdaBytes, iv_shares);
+	for (size_t i = 0; i < lambdaBytes; i++) {
+		rootkey[i] ^= rootkey_share[i];
+	}
+	for (size_t i = 0; i < 16; i++) {
+		signature_iv(sig, params)[i] ^= iv_share[i];
+	}
+#endif
   }
 
   vbb_t vbb;

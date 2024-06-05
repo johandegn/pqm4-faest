@@ -82,6 +82,7 @@ void H2_final(H2_context_t* ctx, uint8_t* digest, size_t len) {
   hash_clear(ctx);
 }
 
+#ifdef KECCAK_MASK_NONE
 // H_3
 void H3_init(H3_context_t* ctx, unsigned int security_param) {
   hash_init(ctx, security_param == 128 ? 128 : 256);
@@ -98,3 +99,23 @@ void H3_final(H3_context_t* ctx, uint8_t* digest, size_t len, uint8_t* iv) {
   hash_squeeze(ctx, iv, 16);
   hash_clear(ctx);
 }
+#else
+// H_3
+void H3_init(H3_context_t* ctx, unsigned int security_param) {
+  masked_hash_init(ctx, security_param == 128 ? 128 : 256, 2);
+}
+
+void H3_update(H3_context_t* ctx, const uint8_t** src, size_t len) {
+  masked_hash_update(ctx, src, len);
+}
+
+void H3_final(H3_context_t* ctx, uint8_t** digest, size_t len, uint8_t** iv) {
+  const uint8_t domain_sep_H3_share = 0;
+  const uint8_t *domain_sep_H3_shares[2] = {&domain_sep_H3, &domain_sep_H3_share};
+  masked_hash_update(ctx, domain_sep_H3_shares, sizeof(domain_sep_H3));
+  masked_hash_final(ctx);
+  masked_hash_squeeze(ctx, digest, len);
+  masked_hash_squeeze(ctx, iv, 16);
+  masked_hash_clear(ctx);
+}
+#endif

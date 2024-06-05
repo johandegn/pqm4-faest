@@ -8,14 +8,16 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <alloca.h>
 
 #include "macros.h"
 #include "endian_compat.h"
+#include "randomness.h"
 
 #if defined(WITH_SHAKE_S390_CPACF)
 /* use the KIMD/KLMD instructions from CPACF for SHAKE support on S390 */
 #include "sha3/s390_cpacf.h"
-#elif defined(OQS) || defined(PQCLEAN)
+#elif 0 //defined(OQS) || defined(PQCLEAN)
 #if defined(OQS)
 /* use OQS's SHAKE implementation */
 #include <oqs/sha3.h>
@@ -194,7 +196,8 @@ static inline void hash_clear_x4(hash_context_x4* ctx) {
 #else
 #if !defined(SUPERCOP)
 /* use SHAKE implementation in sha3/ */
-#include "sha3/KeccakHash.h"
+#include "KeccakHash.h"
+#include "KeccakMPCHash.h"
 #else
 /* use SUPERCOP implementation */
 #include <libkeccak.a.headers/KeccakHash.h>
@@ -205,10 +208,175 @@ static inline void hash_clear_x4(hash_context_x4* ctx) {
 #include "KeccakHashtimes4.h"
 #endif
 
+#ifdef KECCAK_MASK_ALL    /* When KECCAK_MASK_ALL is set, ALL calls to SHA-3 are masked. */
+typedef KeccakMPC_HashInstance hash_context ATTR_ALIGNED(32);
+typedef KeccakMPC_HashInstance masked_hash_context ATTR_ALIGNED(32);
+#else                    /* Otherwise, we only mask those calls that use masked_hash_context */
 typedef Keccak_HashInstance hash_context;
+#ifdef KECCAK_MASK_NONE
+typedef Keccak_HashInstance masked_hash_context;
+#else
+typedef KeccakMPC_HashInstance masked_hash_context ATTR_ALIGNED(32);
+#endif
+#endif
+
+#ifdef KECCAK_MASK_NONE
+
+static inline void array_xor(uint8_t* a, const uint8_t* b, const uint8_t* c, size_t len ) {
+  size_t i;
+  for( i=0; i< len; i++) {
+    a[i] = b[i] ^ c[i];
+  }
+}
+
+static inline void masked_hash_init(masked_hash_context *ctx, unsigned int security_param, size_t shareCount) {
+  (void)shareCount;
+  if (security_param == 128) {
+    Keccak_HashInitialize_SHAKE128(ctx);
+  } else {
+    Keccak_HashInitialize_SHAKE256(ctx);
+  }
+}
+
+static inline void masked_hash_update(masked_hash_context* ctx, const uint8_t** data, size_t byteLen) {
+  uint8_t *buffer = (uint8_t *)alloca(byteLen);
+  array_xor(buffer, data[0], data[1], byteLen);
+  Keccak_HashUpdate(ctx, buffer, byteLen * 8);
+}
+
+static inline void masked_hash_final(masked_hash_context* ctx) {
+  Keccak_HashFinal(ctx, NULL);
+}
+
+static inline void masked_hash_squeeze(masked_hash_context* ctx, uint8_t** digestShares, size_t byteLen) {
+  uint8_t *buffer = (uint8_t *)alloca(byteLen);
+  Keccak_HashSqueeze(ctx, buffer, byteLen * 8);
+  memcpy(digestShares[0], buffer, byteLen);
+  memset(digestShares[1], 0, byteLen);
+}
+
+static inline void masked_hash_update_uint16_le(masked_hash_context* ctx, uint16_t ** shares) {
+  Keccak_HashUpdate(ctx, (const uint8_t*)shares[0], 16);
+}
+
+#else /* KECCAK_MASK_NONE */
+
+static inline void masked_hash_init(masked_hash_context *ctx, unsigned int security_param, size_t shareCount) {
+  if (shareCount != 2) {
+    return;
+  }
+  if( security_param == 128) {
+    KeccakMPC_HashInitialize_2SHARE_SHAKE128(ctx);
+  } else {
+    KeccakMPC_HashInitialize_2SHARE_SHAKE256(ctx);
+  }
+}
+
+static inline void masked_hash_update(masked_hash_context* ctx, const uint8_t** data, size_t byteLen) {
+  KeccakMPC_HashUpdate(ctx, (uint8_t**)data, byteLen * 8);
+}
+
+static inline void masked_hash_final(masked_hash_context* ctx) {
+  KeccakMPC_HashFinal(ctx, NULL);
+}
+
+static inline void masked_hash_squeeze(masked_hash_context* ctx, uint8_t** digestShares, size_t byteLen) {
+  KeccakMPC_HashSqueeze(ctx, digestShares, byteLen * 8);
+#ifdef KECCAK_SNI_SECURE
+  uint8_t *buffer = (uint8_t *)alloca(byteLen);
+  rand_mask(buffer, byteLen);
+  array_xor(digestShares[0], digestShares[0], buffer, byteLen);
+  array_xor(digestShares[1], digestShares[1], buffer, byteLen);
+#endif
+}
+
+static inline void masked_hash_update_uint16_le(masked_hash_context* ctx, uint16_t ** shares) {
+  KeccakMPC_HashUpdate(ctx, (BitSequence**)shares, 16);
+}
+
+#define masked_hash_clear(ctx)
+#endif /* KECCAK_MASK_NONE */
+
+static inline void masked_hash_init_prefix(masked_hash_context* ctx, unsigned int security_param, const uint8_t prefix, size_t shareCount) {
+  masked_hash_init(ctx, security_param, shareCount);
+  uint8_t **shares = (uint8_t **)alloca(shareCount * sizeof(uint8_t**));
+  uint8_t * slab = (uint8_t *)alloca(shareCount);
+  shares[0] = slab;
+  shares[0][0] = prefix;
+  for(size_t i = 1; i < shareCount; ++i) {
+    shares[i] = slab + i;
+    shares[i][0] = 0;
+  }
+  masked_hash_update(ctx, (const uint8_t **)shares, sizeof(prefix));
+}
+
+#ifdef KECCAK_MASK_ALL
+
+static inline void array_xor(uint8_t* a, const uint8_t* b, const uint8_t* c, size_t len ) {
+  size_t i;
+  for( i=0; i< len; i++) {
+    a[i] = b[i] ^ c[i];
+  }
+}
 
 /**
- * Initialize hash context based on the security parameter. If the security parameter is 128,
+ * Initialize hash context based on the digest size used by FAEST.
+ */
+static inline void hash_init(hash_context* ctx, unsigned int security_param) {
+  masked_hash_init(ctx, security_param, 2);
+}
+
+static inline void hash_update(hash_context* ctx, const uint8_t* data, size_t size) {
+  const int shareCount = 2;
+  uint8_t ** shares = (uint8_t **)alloca(shareCount * sizeof(uint8_t*));
+  for(int i = 0; i < shareCount; i++) {
+    shares[i] = (uint8_t *)alloca(size);
+  }
+  memcpy(shares[shareCount-1], data, size);
+
+  //set pointers of "outer" array and fill last share with xor
+  for(int i = 0; i < shareCount-1; i++) {
+    rand_mask(shares[i], size);
+    array_xor(shares[shareCount-1], shares[shareCount-1], shares[i], size);
+  }
+
+  masked_hash_update(ctx, (const uint8_t**)shares, size);
+}
+
+static inline void hash_final(hash_context* ctx) {
+  masked_hash_final(ctx);
+}
+
+static inline void hash_squeeze(hash_context* ctx, uint8_t* buffer, size_t buflen) {
+  uint8_t ** shares = (uint8_t **)alloca(ctx->shareCount * sizeof(uint8_t*));
+
+  for(size_t i = 0; i < ctx->shareCount; i++) {
+	shares[i] = (uint8_t *)alloca(buflen);
+  }
+
+  masked_hash_squeeze(ctx, shares, buflen);
+
+  memset(buffer, 0, buflen);
+  for(size_t i = 0; i < ctx->shareCount; i++) {
+    array_xor(buffer, buffer, shares[i], buflen);
+  }
+}
+
+static inline void hash_update_uint16_le(hash_context* ctx, uint16_t data) {
+  uint16_t zero = 0;
+  uint16_t *shares[2] = {&data, &zero};
+  masked_hash_update_uint16_le(ctx, (uint16_t**) shares);
+}
+
+static inline void hash_init_prefix(hash_context* ctx, size_t digest_size, const uint8_t prefix) {
+  masked_hash_init_prefix(ctx, digest_size, prefix, 2);
+}
+
+#define hash_clear(ctx)
+#else /* !KECCAK_MASK_ALL */
+
+/**
+ * Initialize hash context based on the digest size used by Picnic. If the size is 32 bytes,
  * SHAKE128 is used, otherwise SHAKE256 is used.
  */
 static inline void hash_init(hash_context* ctx, unsigned int security_param) {
@@ -231,9 +399,6 @@ static inline void hash_squeeze(hash_context* ctx, uint8_t* buffer, size_t bufle
   Keccak_HashSqueeze(ctx, buffer, buflen << 3);
 }
 
-#define hash_clear(ctx)
-#endif
-
 static inline void hash_update_uint16_le(hash_context* ctx, uint16_t data) {
   const uint16_t data_le = htole16(data);
   hash_update(ctx, (const uint8_t*)&data_le, sizeof(data_le));
@@ -244,6 +409,9 @@ static inline void hash_init_prefix(hash_context* ctx, unsigned int security_par
   hash_init(ctx, security_param);
   hash_update(ctx, &prefix, sizeof(prefix));
 }
+
+#define hash_clear(ctx)
+#endif
 
 #if defined(WITH_KECCAK_X4)
 /* Instances that work with 4 states in parallel. */
@@ -372,3 +540,5 @@ static inline void hash_update_x4_uint16s_le(hash_context_x4* ctx, const uint16_
 }
 
 #endif
+
+#endif /* HASH_SHAKE_H */
