@@ -11,6 +11,7 @@
 #include "faest_aes.h"
 #include "fields.h"
 #include "parameters.h"
+#include "randomness.h"
 
 #define ACCESS_PATTERN_TEST 0
 
@@ -622,4 +623,95 @@ const bf256_t* get_vk_256(vbb_t* vbb, unsigned int idx) {
   bf256_t vk = bf256_add(lhs, rhs);
   memcpy(vbb->vk_buf, &vk, sizeof(bf256_t));
   return (bf256_t*)vbb->vk_buf;
+}
+
+// Masking
+void setup_mask_storage(vbb_t* vbb, uint8_t* vk_mask, uint8_t* v_mask, uint8_t* u_mask) {
+  assert(vbb->full_size == true);
+  const unsigned int lambda      = vbb->params->faest_param.lambda;
+  const unsigned int lambdaBytes = lambda / 8;
+  const unsigned int ellhat      = vbb->params->faest_param.l + lambda * 2 + UNIVERSAL_HASH_B_BITS;
+
+  // Vk masking
+  vbb->vk_mask_cache = vk_mask;//malloc(vbb->params->faest_param.Lke * lambdaBytes);
+  for (unsigned int i = 0; i < vbb->params->faest_param.Lke * lambda / 8; i++) {
+    rand_mask(vbb->vk_mask_cache + i, 1);
+  }
+  for (unsigned int i = 0; i < vbb->params->faest_param.Lke * lambda / 8; i++) {
+    vbb->vk_cache[i] ^= vbb->vk_mask_cache[i];
+  }
+
+  // Vole masking
+  vbb->v_mask_cache = v_mask;//malloc(ellhat * lambdaBytes);
+  for (unsigned int i = 0; i < ellhat * lambdaBytes; i++) {
+    rand_mask(vbb->v_mask_cache + i, 1);
+  }
+  for (unsigned int i = 0; i < ellhat * lambdaBytes; i++) {
+    vbb->vole_cache[i] ^= vbb->v_mask_cache[i];
+  }
+
+  vbb->u_mask_cache = u_mask;//malloc(ellhat / 8);
+  for (unsigned int i = 0; i < ellhat / 8; i++) {
+    rand_mask(vbb->u_mask_cache + i, 1);
+  }
+  for (unsigned int i = 0; i < ellhat / 8; i++) {
+    vbb->vole_U[i] ^= vbb->u_mask_cache[i];
+  }
+}
+
+void reconstruct_vole(vbb_t* vbb) {
+  const unsigned int lambda = vbb->params->faest_param.lambda;
+  const unsigned int ellhat = vbb->params->faest_param.l + lambda * 2 + UNIVERSAL_HASH_B_BITS;
+  // Reconstruct vk
+  for (unsigned int i = 0; i < vbb->params->faest_param.Lke * lambda / 8; i++) {
+    vbb->vk_cache[i] ^= vbb->vk_mask_cache[i];
+  }
+
+  // Reconstruct vole
+  for (unsigned int i = 0; i < ellhat * lambda / 8; i++) {
+    vbb->vole_cache[i] ^= vbb->v_mask_cache[i];
+  }
+  for (unsigned int i = 0; i < ellhat / 8; i++) {
+    vbb->vole_U[i] ^= vbb->u_mask_cache[i];
+  }
+}
+
+const bf128_t* get_vole_aes_128_share(vbb_t* vbb, unsigned int idx, unsigned int share) {
+  if (share == 1) {
+    // printf(" ");
+    const unsigned int lambda       = vbb->params->faest_param.lambda;
+    const unsigned int lambda_bytes = lambda / 8;
+    const unsigned int ellhat = vbb->params->faest_param.l + lambda * 2 + UNIVERSAL_HASH_B_BITS;
+    const unsigned int ellhat_bytes = ellhat / 8;
+
+    memset(vbb->v_buf, 0, lambda_bytes);
+    // Transpose on the fly into v_buf
+    for (unsigned int column = 0; column != lambda; ++column) {
+      ptr_set_bit(vbb->v_buf, ptr_get_bit(vbb->v_mask_cache + column * ellhat_bytes, idx), column);
+    }
+    return (bf128_t*)vbb->v_buf;
+
+  } else {
+    return get_vole_aes_128(vbb, idx);
+  }
+}
+
+const uint8_t* get_vole_u_share(vbb_t* vbb, unsigned int share) {
+  if (share == 1) {
+    return vbb->u_mask_cache;
+  } else {
+    return vbb->vole_U;
+  }
+}
+
+const bf128_t* get_vk_128_share(vbb_t* vbb, unsigned int idx, unsigned int share) {
+  if (share == 1) {
+    uint8_t* tmp      = vbb->vk_cache;
+    vbb->vk_cache     = vbb->vk_mask_cache;
+    const bf128_t* vk = get_vk_128(vbb, idx);
+    vbb->vk_cache     = tmp;
+    return vk;
+  } else {
+    return get_vk_128(vbb, idx);
+  }
 }

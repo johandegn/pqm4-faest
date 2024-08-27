@@ -18,6 +18,10 @@ void aes_prove(const uint8_t* w, vbb_t* vbb, const uint8_t* in, const uint8_t* o
                const uint8_t* chall, uint8_t* a_tilde, uint8_t* b_tilde,
                const faest_paramset_t* params);
 
+void aes_prove_masked(const uint8_t* w, vbb_t* vbb, const uint8_t* in, const uint8_t* out,
+               const uint8_t* chall, uint8_t* a_tilde, uint8_t* b_tilde,
+               const faest_paramset_t* params);
+
 uint8_t* aes_verify(vbb_t* vbb, const uint8_t* chall_2, const uint8_t* chall_3,
                     const uint8_t* a_tilde, const uint8_t* in, const uint8_t* out,
                     const faest_paramset_t* params, uint8_t* q_tilde);

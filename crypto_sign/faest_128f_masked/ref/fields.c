@@ -32,6 +32,9 @@ bf8_t bf8_rand(void) {
   return ret;
 }
 
+/*
+bf8_t bf8_mul(bf8_t lhs, bf8_t rhs);
+*/
 bf8_t bf8_mul(bf8_t lhs, bf8_t rhs) {
   bf8_t result = 0;
   for (unsigned int idx = 0; idx < 7; ++idx) {
@@ -164,10 +167,14 @@ bf128_t bf128_byte_combine(const bf128_t* x) {
   }
   return bf_out;
 }
-bf128_t bf128_byte_combine_vk(vbb_t* vbb, unsigned int offset) {
-  bf128_t bf_out = *get_vk_128(vbb, offset);
+bf128_t bf128_byte_combine_vk(vbb_t* vbb, unsigned int offset){
+  return bf128_byte_combine_vk_share(vbb, offset, 0);
+}
+
+bf128_t bf128_byte_combine_vk_share(vbb_t* vbb, unsigned int offset, int share) {
+  bf128_t bf_out = *get_vk_128_share(vbb, offset, share);
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul(*get_vk_128(vbb, offset + i), bf128_alpha[i - 1]));
+    bf_out = bf128_add(bf_out, bf128_mul(*get_vk_128_share(vbb, offset + i, share), bf128_alpha[i - 1]));
   }
   return bf_out;
 }
@@ -175,6 +182,14 @@ bf128_t bf128_byte_combine_vbb(vbb_t* vbb, unsigned int offset) {
   bf128_t bf_out = *get_vole_aes_128(vbb, offset);
   for (unsigned int i = 1; i < 8; ++i) {
     bf_out = bf128_add(bf_out, bf128_mul(*get_vole_aes_128(vbb, offset + i), bf128_alpha[i - 1]));
+  }
+  return bf_out;
+}
+
+bf128_t bf128_byte_combine_vbb_share(vbb_t* vbb, unsigned int offset, int share) {
+  bf128_t bf_out = *get_vole_aes_128_share(vbb, offset, share);
+  for (unsigned int i = 1; i < 8; ++i) {
+    bf_out = bf128_add(bf_out, bf128_mul(*get_vole_aes_128_share(vbb, offset + i, share), bf128_alpha[i - 1]));
   }
   return bf_out;
 }
@@ -348,6 +363,14 @@ bf128_t bf128_sum_poly_vbb(vbb_t* vbb, unsigned int offset) {
   bf128_t ret = *get_vole_aes_128(vbb, offset + 128 - 1);
   for (size_t i = 1; i < 128; ++i) {
     ret = bf128_add(bf128_dbl(ret), *get_vole_aes_128(vbb, offset + 128 - 1 - i));
+  }
+  return ret;
+}
+
+bf128_t bf128_sum_poly_vbb_share(vbb_t* vbb, unsigned int offset, int share) {
+  bf128_t ret = *get_vole_aes_128_share(vbb, offset + 128 - 1, share);
+  for (size_t i = 1; i < 128; ++i) {
+    ret = bf128_add(bf128_dbl(ret), *get_vole_aes_128_share(vbb, offset + 128 - 1 - i, share));
   }
   return ret;
 }

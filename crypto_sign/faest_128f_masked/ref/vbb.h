@@ -37,6 +37,10 @@ struct vbb_t {
   // Vk_cache
   uint8_t* vk_buf;
   uint8_t* vk_cache;
+  // Masking
+  uint8_t* v_mask_cache;
+  uint8_t* vk_mask_cache;
+  uint8_t* u_mask_cache;
 };
 
 // Signer
@@ -70,5 +74,12 @@ const uint8_t* get_dtilde(vbb_t* vbb, unsigned int idx);
 const bf128_t* get_vk_128(vbb_t* vbb, unsigned int idx);
 const bf192_t* get_vk_192(vbb_t* vbb, unsigned int idx);
 const bf256_t* get_vk_256(vbb_t* vbb, unsigned int idx);
+
+// Masked
+void setup_mask_storage(vbb_t* vbb, uint8_t* vk_mask, uint8_t* v_mask, uint8_t* u_mask);
+void reconstruct_vole(vbb_t* vbb);
+const bf128_t* get_vole_aes_128_share(vbb_t* vbb, unsigned int idx, unsigned int share);
+const bf128_t* get_vk_128_share(vbb_t* vbb, unsigned int idx, unsigned int share);
+const uint8_t* get_vole_u_share(vbb_t* vbb, unsigned int share);
 
 #endif

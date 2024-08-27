@@ -384,6 +384,10 @@ bf128_t bf128_byte_combine_vbb(vbb_t* vbb, unsigned int offset);
 bf128_t bf128_byte_combine_vk(vbb_t* vbb, unsigned int offset);
 bf192_t bf192_byte_combine_vk(vbb_t* vbb, unsigned int offset);
 bf256_t bf256_byte_combine_vk(vbb_t* vbb, unsigned int offset);
+
+bf128_t bf128_byte_combine_vk_share(vbb_t* vbb, unsigned int offset, int share);
+bf128_t bf128_byte_combine_vbb_share(vbb_t* vbb, unsigned int offset, int share);
+bf128_t bf128_sum_poly_vbb_share(vbb_t* vbb, unsigned int offset, int share);
 FAEST_END_C_DECL
 
 #endif

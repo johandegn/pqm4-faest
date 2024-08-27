@@ -15,6 +15,7 @@
 #include "vole.h"
 #include "universal_hashing.h"
 #include "vbb.h"
+#include "hal.h"
 
 // helpers to compute position in signature (sign)
 
@@ -263,6 +264,10 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
   hash_mu(mu, owf_input, owf_output, params->faest_param.pkSize / 2, msg, msglen, lambda);
 
   uint8_t rootkey[MAX_LAMBDA_BYTES];
+  uint8_t key_share[2][MAX_LAMBDA_BYTES]       = {0};
+  uint8_t owf_input_share[2][MAX_LAMBDA_BYTES] = {0};
+  uint8_t owf_output_share[2][16];
+
   {
 #ifdef KECCAK_MASK_NONE
     H3_context_t h3_ctx;
@@ -274,22 +279,35 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
     }
     H3_final(&h3_ctx, rootkey, lambdaBytes, signature_iv(sig, params));
 #else
-	uint8_t rootkey_share[MAX_LAMBDA_BYTES] = { 0 };
-	uint8_t owf_key_share0[MAX_LAMBDA_BYTES] = { 0 };
-	uint8_t owf_key_share1[MAX_LAMBDA_BYTES] = { 0 };
-	uint8_t mu_share[2 * MAX_LAMBDA_BYTES] = { 0 };
-	uint8_t rho_share[MAX_LAMBDA_BYTES] = { 0 };
-	uint8_t iv_share[16] = { 0 };
-	uint8_t* rootkey_shares[2] = {rootkey, rootkey_share};
-	uint8_t* iv_shares[2] = {signature_iv(sig, params), iv_share};
-	const uint8_t* owf_key_shares[2] = {owf_key_share0, owf_key_share1};
-	const uint8_t* mu_shares[2] = {mu, mu_share};
-	const uint8_t* rho_shares[2] = {rho, rho_share};
+    uint8_t rootkey_share[MAX_LAMBDA_BYTES]  = {0};
+    uint8_t owf_key_share0[MAX_LAMBDA_BYTES] = {0};
+    uint8_t owf_key_share1[MAX_LAMBDA_BYTES] = {0};
+    uint8_t mu_share[2 * MAX_LAMBDA_BYTES]   = {0};
+    uint8_t rho_share[MAX_LAMBDA_BYTES]      = {0};
+    uint8_t iv_share[16]                     = {0};
+    uint8_t* rootkey_shares[2]               = {rootkey, rootkey_share};
+    uint8_t* iv_shares[2]                    = {signature_iv(sig, params), iv_share};
+    const uint8_t* owf_key_shares[2]         = {owf_key_share0, owf_key_share1};
+    const uint8_t* mu_shares[2]              = {mu, mu_share};
+    const uint8_t* rho_shares[2]             = {rho, rho_share};
     H3_context_t h3_ctx;
-	rand_mask(owf_key_share0, lambdaBytes);
-	for (size_t i = 0; i < lambdaBytes; i++) {
-		owf_key_share1[i] = owf_key[i] ^ owf_key_share0[i];
-	}
+    rand_mask(owf_key_share0, lambdaBytes);
+    for (size_t i = 0; i < lambdaBytes; i++) {
+      owf_key_share1[i] = owf_key[i] ^ owf_key_share0[i];
+    }
+
+    for (int i = 0; i < MAX_LAMBDA_BYTES; i++) {
+      rand_mask(&key_share[0][i], 1);
+      key_share[1][i] = owf_key[i] ^ key_share[0][i];
+    }
+    for (int i = 0; i < MAX_LAMBDA_BYTES; i++) {
+      rand_mask(&owf_input_share[0][i], 1);
+      owf_input_share[1][i] = owf_input[i] ^ owf_input_share[0][i];
+    }
+    for (int i = 0; i < 16; i++) {
+      rand_mask(&owf_output_share[0][i], 1);
+      owf_output_share[1][i] = owf_output[i] ^ owf_output_share[0][i];
+    }
     H3_init(&h3_ctx, lambda);
     H3_update(&h3_ctx, owf_key_shares, lambdaBytes);
     H3_update(&h3_ctx, mu_shares, lambdaBytes * 2);
@@ -297,15 +315,14 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
       H3_update(&h3_ctx, rho_shares, rholen);
     }
     H3_final(&h3_ctx, rootkey_shares, lambdaBytes, iv_shares);
-	for (size_t i = 0; i < lambdaBytes; i++) {
-		rootkey[i] ^= rootkey_share[i];
-	}
-	for (size_t i = 0; i < 16; i++) {
-		signature_iv(sig, params)[i] ^= iv_share[i];
-	}
+    for (size_t i = 0; i < lambdaBytes; i++) {
+      rootkey[i] ^= rootkey_share[i];
+    }
+    for (size_t i = 0; i < 16; i++) {
+      signature_iv(sig, params)[i] ^= iv_share[i];
+    }
 #endif
   }
-
   vbb_t vbb;
   // TODO: find a solution for setting argument (dynamic or static)?
   const unsigned int len = ell_hat;
@@ -314,14 +331,13 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
   uint8_t* v_cache       = alloca(len * lambdaBytes);
   uint8_t* v_buf         = alloca(lambdaBytes);
   uint8_t* vk_buf        = NULL;
-  uint8_t* vk_cache      = NULL;    
+  uint8_t* vk_cache      = NULL;
   if (!(params->faest_paramid > 6)) {
-    vk_buf        = alloca(lambdaBytes);
-    vk_cache      = alloca(params->faest_param.Lke * lambdaBytes);
+    vk_buf   = alloca(lambdaBytes);
+    vk_cache = alloca(params->faest_param.Lke * lambdaBytes);
   }
   init_stack_allocations_sign(&vbb, hcom, u, v_cache, v_buf, vk_buf, vk_cache);
-  init_vbb_sign(&vbb, len, rootkey, signature_iv(sig, params), signature_c(sig, 0, params),
-                 params);
+  init_vbb_sign(&vbb, len, rootkey, signature_iv(sig, params), signature_c(sig, 0, params), params);
 
   uint8_t chall_1[(5 * MAX_LAMBDA_BYTES) + 8];
   hash_challenge_1(chall_1, mu, get_com_hash(&vbb), signature_c(sig, 0, params),
@@ -342,21 +358,52 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
     }
     H1_final(&h1_ctx_1, h_v, lambdaBytes * 2);
   }
-  uint8_t* w = alloca((l + 7) / 8);
-  w = aes_extend_witness(owf_key, owf_input, params, w);
-  xor_u8_array(w, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
+#define WITNESS_MASKING
+#ifdef WITNESS_MASKING
+  // secret sharing the key and then computing the extended witness
+  uint8_t* w_share = alloca(2 * (l + 7) / 8);
 
+  // secret sharing the input, (Not needed only to remove false positive leakage)
+
+  w_share = aes_extend_witness_masked(&key_share[0][0], &owf_input_share[0][0], params, w_share);
+
+  xor_u8_array(w_share, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
+  xor_u8_array(w_share + (l + 7) / 8, signature_d(sig, params), signature_d(sig, params), ell_bytes);
+#else
+  uint8_t* w = alloca((l + 7) / 8);
+  w          = aes_extend_witness(owf_key, owf_input, params, w);
+  xor_u8_array(w, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
+#endif
   uint8_t chall_2[3 * MAX_LAMBDA_BYTES + 8];
   hash_challenge_2(chall_2, chall_1, signature_u_tilde(sig, params), h_v, signature_d(sig, params),
                    lambda, l);
 
   prepare_aes_sign(&vbb);
   uint8_t b_tilde[MAX_LAMBDA_BYTES];
+
+#ifdef WITNESS_MASKING
+  if (params->faest_paramid == 1 || params->faest_paramid == 2) {
+    uint8_t* vk_mask = alloca(params->faest_param.Lke * lambdaBytes);
+    uint8_t* v_mask = alloca(ell_hat * lambdaBytes);
+    uint8_t* u_mask = alloca(ell_hat/8);
+    setup_mask_storage(&vbb, vk_mask, v_mask, u_mask);
+    aes_prove_masked(w_share, &vbb, &owf_input_share[0][0], &owf_output_share[0][0], chall_2,
+                     signature_a_tilde(sig, params), b_tilde, params);
+  } else {
+    uint8_t* w = alloca((l + 7) / 8);
+    for (unsigned int i = 0; i < (l + 7) / 8; i++) {
+      w[i] = w_share[i] ^ w_share[i + (l + 7) / 8];
+    }
+    aes_prove(w, &vbb, owf_input, owf_output, chall_2, signature_a_tilde(sig, params), b_tilde,
+              params);
+  }
+#else
   aes_prove(w, &vbb, owf_input, owf_output, chall_2, signature_a_tilde(sig, params), b_tilde,
             params);
+#endif
 
-  //free(w);
-  //w = NULL;
+  // free(w);
+  // w = NULL;
 
   hash_challenge_3(signature_chall_3(sig, params), chall_2, signature_a_tilde(sig, params), b_tilde,
                    lambda);
@@ -369,7 +416,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
     vector_open_ondemand(&vbb, i, s_, signature_pdec(sig, i, params), signature_com(sig, i, params),
                          depth);
   }
-  //clean_vbb(&vbb);
+  // clean_vbb(&vbb);
 }
 
 int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const uint8_t* owf_input,
@@ -387,10 +434,10 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
   uint8_t* Dtilde_buf    = alloca(lambdaBytes + UNIVERSAL_HASH_B);
   uint8_t* v_buf         = alloca(lambdaBytes);
   uint8_t* vk_buf        = NULL;
-  uint8_t* vk_cache      = NULL;    
+  uint8_t* vk_cache      = NULL;
   if (!(params->faest_paramid > 6)) {
-    vk_buf        = alloca(lambdaBytes);
-    vk_cache      = alloca(params->faest_param.Lke * lambdaBytes);
+    vk_buf   = alloca(lambdaBytes);
+    vk_cache = alloca(params->faest_param.Lke * lambdaBytes);
   }
   init_stack_allocations_verify(&vbb, hcom, q_cache, Dtilde_buf, v_buf, vk_buf, vk_cache);
   init_vbb_verify(&vbb, len, params, sig);
@@ -423,14 +470,15 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
 
   prepare_aes_verify(&vbb);
   uint8_t* q_tilde = alloca(lambdaBytes);
-  uint8_t* b_tilde = aes_verify(&vbb, chall_2, dsignature_chall_3(sig, params),
-                                dsignature_a_tilde(sig, params), owf_input, owf_output, params, q_tilde);
+  uint8_t* b_tilde =
+      aes_verify(&vbb, chall_2, dsignature_chall_3(sig, params), dsignature_a_tilde(sig, params),
+                 owf_input, owf_output, params, q_tilde);
 
   uint8_t chall_3[MAX_LAMBDA_BYTES];
   hash_challenge_3(chall_3, chall_2, dsignature_a_tilde(sig, params), b_tilde, lambda);
-  //free(b_tilde);
-  //b_tilde = NULL;
-  //clean_vbb(&vbb);
+  // free(b_tilde);
+  // b_tilde = NULL;
+  // clean_vbb(&vbb);
 
   return memcmp(chall_3, dsignature_chall_3(sig, params), lambdaBytes) == 0 ? 0 : -1;
 }
