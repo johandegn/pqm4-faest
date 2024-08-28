@@ -15,7 +15,6 @@
 #include "vole.h"
 #include "universal_hashing.h"
 #include "vbb.h"
-#include "hal.h"
 
 // helpers to compute position in signature (sign)
 
@@ -308,6 +307,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
       rand_mask(&owf_output_share[0][i], 1);
       owf_output_share[1][i] = owf_output[i] ^ owf_output_share[0][i];
     }
+
     H3_init(&h3_ctx, lambda);
     H3_update(&h3_ctx, owf_key_shares, lambdaBytes);
     H3_update(&h3_ctx, mu_shares, lambdaBytes * 2);
@@ -323,6 +323,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
     }
 #endif
   }
+
   vbb_t vbb;
   // TODO: find a solution for setting argument (dynamic or static)?
   const unsigned int len = ell_hat;
@@ -358,6 +359,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
     }
     H1_final(&h1_ctx_1, h_v, lambdaBytes * 2);
   }
+
 #define WITNESS_MASKING
 #ifdef WITNESS_MASKING
   // secret sharing the key and then computing the extended witness
@@ -368,12 +370,14 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
   w_share = aes_extend_witness_masked(&key_share[0][0], &owf_input_share[0][0], params, w_share);
 
   xor_u8_array(w_share, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
-  xor_u8_array(w_share + (l + 7) / 8, signature_d(sig, params), signature_d(sig, params), ell_bytes);
+  xor_u8_array(w_share + (l + 7) / 8, signature_d(sig, params), signature_d(sig, params),
+               ell_bytes);
 #else
   uint8_t* w = alloca((l + 7) / 8);
   w          = aes_extend_witness(owf_key, owf_input, params, w);
   xor_u8_array(w, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
 #endif
+
   uint8_t chall_2[3 * MAX_LAMBDA_BYTES + 8];
   hash_challenge_2(chall_2, chall_1, signature_u_tilde(sig, params), h_v, signature_d(sig, params),
                    lambda, l);

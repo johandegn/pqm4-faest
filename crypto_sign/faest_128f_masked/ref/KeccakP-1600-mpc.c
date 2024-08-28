@@ -3,7 +3,6 @@
 #ifndef KECCAK_MASK_NONE
 
 #ifdef STM32F4
-#warning "Using ARMv7M code ##########"
 #include "KeccakP-1600-inplace-32bi-armv7m-le-gcc-mpc.c.i"
 #else
 #include "KeccakP-1600-opt64.c.i"

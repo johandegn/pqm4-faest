@@ -1,0 +1,6 @@
+2024-08-28 09:43:57,583 BoardTestCase INFO: Runnning faest_128f - ref - test
+2024-08-28 09:43:57,583 Implementation INFO: Building faest_128f - ref - test
+2024-08-28 09:43:57,705 Implementation DEBUG: make stdout output:
+OBJCOPY bin/crypto_sign_faest_128f_ref_test.hex
+2024-08-28 09:44:06,227 Platform DEBUG: Found start pattern: b'=========================\n'
+2024-08-28 09:47:04,331 BoardTestCase INFO: Test faest_128f - ref - test Successful

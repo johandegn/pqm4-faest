@@ -1,0 +1,89 @@
+2024-08-28 09:20:09,487 BoardTestCase INFO: Runnning faest_128f_masked - ref - test
+2024-08-28 09:20:09,487 Implementation INFO: Building faest_128f_masked - ref - test
+2024-08-28 09:20:19,974 Implementation DEBUG: make stdout output:
+Variable PLATFORM changed, forcing rebuild!
+  GEN     obj/.config.mk
+make -C /home/degn/uni/thesis/embedded/pqm4/libopencm3 lib/stm32/f4
+  BUILD   lib/stm32/f4
+  CC      adc_common_v1.c
+  CC      adc_common_v1_multi.c
+  CC      adc_common_f47.c
+  CC      can.c
+  CC      crc_common_all.c
+  CC      crypto_common_f24.c
+  CC      crypto.c
+  CC      dac_common_all.c
+  CC      dac_common_v1.c
+  CC      dcmi_common_f47.c
+  CC      desig_common_all.c
+  CC      desig_common_v1.c
+  CC      dma_common_f24.c
+  CC      dma2d_common_f47.c
+  CC      dsi_common_f47.c
+  CC      exti_common_all.c
+  CC      flash.c
+  CC      flash_common_all.c
+  CC      flash_common_f.c
+  CC      flash_common_f24.c
+  CC      flash_common_idcache.c
+  CC      fmc_common_f47.c
+  CC      gpio_common_all.c
+  CC      gpio_common_f0234.c
+  CC      hash_common_f24.c
+  CC      i2c_common_v1.c
+  CC      iwdg_common_all.c
+  CC      lptimer_common_all.c
+  CC      ltdc_common_f47.c
+  CC      pwr_common_v1.c
+  CC      pwr.c
+  CC      rcc_common_all.c
+  CC      rcc.c
+  CC      rng_common_v1.c
+  CC      rtc_common_l1f024.c
+  CC      rtc.c
+  CC      spi_common_all.c
+  CC      spi_common_v1.c
+  CC      spi_common_v1_frf.c
+  CC      timer_common_all.c
+  CC      timer_common_f0234.c
+  CC      timer_common_f24.c
+  CC      usart_common_all.c
+  CC      usart_common_f124.c
+  CC      quadspi_common_v1.c
+  CC      usb.c
+  CC      usb_standard.c
+  CC      usb_control.c
+  CC      usb_msc.c
+  CC      usb_hid.c
+  CC      usb_audio.c
+  CC      usb_cdc.c
+  CC      usb_midi.c
+  CC      usb_dwc_common.c
+  CC      usb_f107.c
+  CC      usb_f207.c
+  CC      mac.c
+  CC      phy.c
+  CC      mac_stm32fxx7.c
+  CC      phy_ksz80x1.c
+  CC      vector.c
+  CC      systick.c
+  CC      scb.c
+  CC      nvic.c
+  CC      assert.c
+  CC      sync.c
+  CC      dwt.c
+  AR      libopencm3_stm32f4.a
+  CC      elf/crypto_sign_faest_128f_masked_ref_test.elf
+  OBJCOPY bin/crypto_sign_faest_128f_masked_ref_test.bin
+2024-08-28 09:20:28,518 BoardTestCase ERROR: Running faest_128f_masked - ref - test failed with exception: Traceback (most recent call last):
+
+  File "/home/degn/uni/thesis/embedded/pqm4/mupq/mupq.py", line 238, in run_test
+    output = self.interface.run(binary, self.iterations)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/degn/uni/thesis/embedded/pqm4/mupq/platforms.py", line 99, in run
+    if self._dev.read_until(b'=')[-1] != b'='[0]:
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+
+IndexError: index out of range
+

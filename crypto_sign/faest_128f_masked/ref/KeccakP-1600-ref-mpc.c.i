@@ -346,7 +346,9 @@ void KeccakP1600MPCRound(tKeccakLane *state, unsigned int indexRound)
 #endif
 }
 
+#ifndef ROL64
 #define ROL64(a, offset) ((offset != 0) ? ((((tKeccakLane)a) << offset) ^ (((tKeccakLane)a) >> (64-offset))) : a)
+#endif
 
 static void theta(tKeccakLane *A)
 {

@@ -51,7 +51,7 @@ static void ConstructVoleCMO(const uint8_t* iv, vec_com_t* vec_com, unsigned int
 
   uint8_t* sd  = alloca(lambda_bytes);
   uint8_t* com = alloca(lambda_bytes * 2);
-  H1_context_t* h1_ctx;
+  H1_context_t* h1_ctx = NULL;
   if (h != NULL) {
     h1_ctx = alloca(sizeof(H1_context_t));
     H1_init(h1_ctx, lambda);
@@ -164,7 +164,7 @@ void partial_vole_commit_cmo(const uint8_t* rootKey, const uint8_t* iv, unsigned
   prg(rootKey, iv, expanded_keys, lambda, lambda_bytes * tau);
   uint8_t* path = alloca(lambda_bytes * max_depth * 2);
 
-  H1_context_t h1_ctx;
+  H1_context_t h1_ctx = {0};
   uint8_t* h = NULL;
   if (vole_mode.mode != EXCLUDE_U_HCOM_C) {
     H1_init(&h1_ctx, lambda);
@@ -274,13 +274,13 @@ static void ReconstructVoleCMO(const uint8_t* iv, vec_com_rec_t* vec_com_rec, un
 
 #define Q_CMO(idx) (q + ((idx) - begin) * out_len_bytes)
 
-  H1_context_t h1_ctx;
+  H1_context_t h1_ctx = {0};
   if (h != NULL) {
     H1_init(&h1_ctx, lambda);
   }
   uint8_t* sd  = alloca(lambda_bytes);
   uint8_t* com = alloca(lambda_bytes * 2);
-  uint8_t* r;
+  uint8_t* r = NULL;
 
   unsigned int offset = NumRec(depth, vec_com_rec->b);
 
@@ -341,7 +341,7 @@ void partial_vole_reconstruct_cmo(const uint8_t* iv, const uint8_t* chall,
   unsigned int k0           = params->faest_param.k0;
   unsigned int k1           = params->faest_param.k1;
 
-  H1_context_t h1_ctx;
+  H1_context_t h1_ctx = {0};
   if (vole_mode.mode != EXCLUDE_HCOM) {
     H1_init(&h1_ctx, lambda);
   }

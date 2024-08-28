@@ -12,8 +12,8 @@
 //#define CONFIG_SNI_SECURE        // Refresh AND inputs/output and Keccak result, "All-SNI" in the paper.
 //#define CONFIG_DOM_SECURE        // Randomize ANDs using Domain-Oriented Masking, "All-DOM" in the paper.
 //#define CONFIG_IND_SECURE        // Mask all calls to Keccak using independent values, "All-IND" in the paper.
-#define CONFIG_MASK_SEL          // Selective masking with independent values.
-//#define CONFIG_SEL_HALF            // Selective half-masking with independent values.
+#define CONFIG_MASK_SEL            // Selective masking with independent values.
+//#define CONFIG_SEL_HALF          // Selective half-masking with independent values.
 //#define CONFIG_LEAK_TEST         // Reduced version for running leakage test.
 //#define CONFIG_TEST_VECTORS      // Compatible with known-answer tests.
 

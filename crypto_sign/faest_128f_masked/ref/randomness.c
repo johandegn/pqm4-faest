@@ -139,7 +139,8 @@ int rand_bytes(uint8_t* dst, size_t len) {
 #ifdef STM32F4
 
 #include <stdint.h>
-#include <libopencm3/rng.h>
+#include <libopencm3/stm32/rng.h>
+
 int rand_mask(uint8_t *obuf, size_t len)
 {
     union

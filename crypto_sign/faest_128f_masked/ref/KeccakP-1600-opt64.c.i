@@ -42,7 +42,9 @@ Please refer to LowLevel.build for the exact list of other files it must be comb
     __out; \
     })
 #else
+#ifndef ROL64
 #define ROL64(a, offset) ((((uint64_t)a) << offset) ^ (((uint64_t)a) >> (64-offset)))
+#endif
 #endif
 
 #include "KeccakP-1600-64.macros"

@@ -2808,6 +2808,11 @@ static void em_enc_forward_256_1(const uint8_t* z, const uint8_t* x, bf256_t* bf
   }
 }
 
+static bf256_t get_bf_x_256(const uint8_t* x, const uint8_t* delta,  unsigned int i) {
+  const bf256_t bf_delta = bf256_load(delta);
+  return bf256_mul_bit(bf_delta, ptr_get_bit(x, i));
+}
+
 static void em_enc_forward_256_vbb(vbb_t* vbb, const bf256_t* bf_x, bf256_t* bf_y) {
   // Step: 2
   for (unsigned int j = 0; j < 4 * FAEST_EM_256F_Nwd; j++) {
@@ -2835,6 +2840,60 @@ static void em_enc_forward_256_vbb(vbb_t* vbb, const bf256_t* bf_x, bf256_t* bf_
         } else {
           bf_x_hat[r] = bf256_zero();
         }
+      }
+
+      bf_y[iy + 0] = bf256_add(bf256_mul(bf_z_hat[0], bf_two), bf256_mul(bf_z_hat[1], bf_three));
+      bf_y[iy + 0] = bf256_add(bf_y[iy + 0], bf_z_hat[2]);
+      bf_y[iy + 0] = bf256_add(bf_y[iy + 0], bf_z_hat[3]);
+      bf_y[iy + 0] = bf256_add(bf_y[iy + 0], bf_x_hat[0]);
+
+      bf_y[iy + 1] = bf256_add(bf_z_hat[0], bf256_mul(bf_z_hat[1], bf_two));
+      bf_y[iy + 1] = bf256_add(bf_y[iy + 1], bf256_mul(bf_z_hat[2], bf_three));
+      bf_y[iy + 1] = bf256_add(bf_y[iy + 1], bf_z_hat[3]);
+      bf_y[iy + 1] = bf256_add(bf_y[iy + 1], bf_x_hat[1]);
+
+      bf_y[iy + 2] = bf256_add(bf_z_hat[0], bf_z_hat[1]);
+      bf_y[iy + 2] = bf256_add(bf_y[iy + 2], bf256_mul(bf_z_hat[2], bf_two));
+      bf_y[iy + 2] = bf256_add(bf_y[iy + 2], bf256_mul(bf_z_hat[3], bf_three));
+      bf_y[iy + 2] = bf256_add(bf_y[iy + 2], bf_x_hat[2]);
+
+      bf_y[iy + 3] = bf256_add(bf256_mul(bf_z_hat[0], bf_three), bf_z_hat[1]);
+      bf_y[iy + 3] = bf256_add(bf_y[iy + 3], bf_z_hat[2]);
+      bf_y[iy + 3] = bf256_add(bf_y[iy + 3], bf256_mul(bf_z_hat[3], bf_two));
+      bf_y[iy + 3] = bf256_add(bf_y[iy + 3], bf_x_hat[3]);
+    }
+  }
+}
+
+static void em_enc_forward_256_vbb_verify(vbb_t* vbb, const uint8_t* x, const uint8_t* delta, bf256_t* bf_y) {
+  // Step: 2
+  for (unsigned int j = 0; j < 4 * FAEST_EM_256F_Nwd; j++) {
+    bf_y[j] = bf256_byte_combine_vbb(vbb, 8 * j);
+    bf256_t bf_x_arr[8];
+    for(int i = 0; i < 8; i++){
+      bf_x_arr[i] = get_bf_x_256(x, delta, 8 * j + i);
+    }
+    bf_y[j] = bf256_add(bf_y[j], bf256_byte_combine(&bf_x_arr[0]));
+  }
+
+  const bf256_t bf_two   = bf256_byte_combine_bits(2);
+  const bf256_t bf_three = bf256_byte_combine_bits(3);
+
+  for (unsigned int j = 1; j < FAEST_EM_256F_R; j++) {
+    for (unsigned int c = 0; c < FAEST_EM_256F_Nwd; c++) {
+      const unsigned int i  = 32 * FAEST_EM_256F_Nwd * j + 32 * c;
+      const unsigned int iy = 4 * FAEST_EM_256F_Nwd * j + 4 * c;
+
+      bf256_t bf_x_hat[4];
+      bf256_t bf_z_hat[4];
+      for (unsigned int r = 0; r <= 3; r++) {
+        // Step: 12..13
+        bf_z_hat[r] = bf256_byte_combine_vbb(vbb, i + 8 * r);
+        bf256_t bf_x_tmp[8];
+        for(int k = 0; k < 8; k++){
+          bf_x_tmp[k] = get_bf_x_256(x, delta, (i + 8 * r) + k);
+        }
+        bf_x_hat[r] = bf256_byte_combine(&bf_x_tmp[0]);
       }
 
       bf_y[iy + 0] = bf256_add(bf256_mul(bf_z_hat[0], bf_two), bf256_mul(bf_z_hat[1], bf_three));
@@ -2891,7 +2950,7 @@ static void em_enc_backward_256_1(const uint8_t* z, const uint8_t* x, const uint
   }
 }
 
-static void em_enc_backward_256_linear_access_verify(vbb_t* vbb, const bf256_t* bf_x, const bf256_t* bf_z_out,
+static void em_enc_backward_256_linear_access_verify(vbb_t* vbb, const bf8_t* x, const bf256_t* bf_z_out,
                                        uint8_t Mtag, uint8_t Mkey, const uint8_t* delta,
                                        bf256_t* y_out) {
   // Step: 1
@@ -2913,9 +2972,9 @@ static void em_enc_backward_256_linear_access_verify(vbb_t* vbb, const bf256_t* 
       for (unsigned int i = 0; i < 8; ++i) {
         // Step: 12
         bf_z_tilde[i] = bf_z_out[ird - 32 * FAEST_EM_256F_Nwd * (j + 1) + i];
-        if (bf_x) {
-          bf_z_tilde[i] = bf256_add(bf_z_tilde[i], bf_x[ird + i]);
-        }
+        
+        bf_z_tilde[i] = bf256_add(bf_z_tilde[i], get_bf_x_256(x, delta, ird + i));
+        
       }
 
       bf256_t bf_y_tilde[8];
@@ -3058,10 +3117,6 @@ static void em_enc_constraints_Mkey_1_256(const uint8_t* out, const uint8_t* x, 
   // Step: 18, 19
   // TODO: compute these on demand in em_enc_backward_256
   const bf256_t bf_delta = bf256_load(delta);
-  bf256_t* bf_x = alloca(sizeof(bf256_t) * 256 * (FAEST_EM_256F_R + 1));
-  for (unsigned int i = 0; i < 256 * (FAEST_EM_256F_R + 1); i++) {
-    bf_x[i] = bf256_mul_bit(bf_delta, ptr_get_bit(x, i));
-  }
 
   // Step 21
   bf256_t* bf_q_out = alloca(sizeof(bf256_t) * FAEST_EM_256F_LAMBDA);
@@ -3072,10 +3127,9 @@ static void em_enc_constraints_Mkey_1_256(const uint8_t* out, const uint8_t* x, 
 
   bf256_t bf_qs[FAEST_EM_256F_Senc];
   bf256_t bf_qs_dash[FAEST_EM_256F_Senc];
-  em_enc_forward_256_vbb(vbb, bf_x, bf_qs);
-  em_enc_backward_256_linear_access_verify(vbb, bf_x, bf_q_out, 0, 1, delta, bf_qs_dash);
+  em_enc_forward_256_vbb_verify(vbb, x, delta, bf_qs);
+  em_enc_backward_256_linear_access_verify(vbb, x, bf_q_out, 0, 1, delta, bf_qs_dash);
   //faest_aligned_free(bf_q_out);
-  //faest_aligned_free(bf_x);
 
   // Step: 13..14
   bf256_t minus_part = bf256_mul(bf_delta, bf_delta);
