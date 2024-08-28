@@ -45,6 +45,18 @@ void poly_caddq(poly *a) {
   asm_caddq(a->coeffs);
 }
 
+/*************************************************
+* Name:        poly_csubq
+*
+* Description: For all coefficients of input polynomial subtract Q if
+*              coefficient is bigger than Q; add Q if coefficient is negative.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+void poly_csubq(poly *a) {
+    asm_caddq(a->coeffs);
+}
+
 #if 0
 /*************************************************
 * Name:        poly_freeze
@@ -323,7 +335,7 @@ int poly_chknorm(const poly *a, int32_t B) {
 *
 * Description: Sample polynomial with uniformly random coefficients
 *              in [0,Q-1] by performing rejection sampling on the
-*              output stream of SHAKE256(seed|nonce) or AES256CTR(seed,nonce).
+*              output stream of SHAKE256(seed|nonce).
 *
 * Arguments:   - poly *a: pointer to output polynomial
 *              - const uint8_t seed[]: byte array with seed of length SEEDBYTES
@@ -409,7 +421,7 @@ static unsigned int rej_eta(int32_t *a,
 *
 * Description: Sample polynomial with uniformly random coefficients
 *              in [-ETA,ETA] by performing rejection sampling on the
-*              output stream from SHAKE256(seed|nonce) or AES256CTR(seed,nonce).
+*              output stream from SHAKE256(seed|nonce).
 *
 * Arguments:   - poly *a: pointer to output polynomial
 *              - const uint8_t seed[]: byte array with seed of length SEEDBYTES
@@ -444,7 +456,7 @@ void poly_uniform_eta(poly *a,
 *
 * Description: Sample polynomial with uniformly random coefficients
 *              in [-(GAMMA1 - 1), GAMMA1] by unpacking output stream
-*              of SHAKE256(seed|nonce) or AES256CTR(seed,nonce).
+*              of SHAKE256(seed|nonce).
 *
 * Arguments:   - poly *a: pointer to output polynomial
 *              - const uint8_t seed[]: byte array with seed of length CRHBYTES
