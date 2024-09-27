@@ -1,3 +1,4 @@
+#include "config.h"
 /*
  *  SPDX-License-Identifier: MIT
  */
