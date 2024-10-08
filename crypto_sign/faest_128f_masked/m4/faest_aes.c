@@ -1216,9 +1216,10 @@ static void aes_enc_backward_128_1_round(const uint8_t* x, const uint8_t* xk, co
 }
 
 static void aes_enc_forward_backward_128(vbb_t* vbb, unsigned int offset, const uint8_t* in, const uint8_t* out,
-                                         uint8_t Mtag, uint8_t Mkey, const uint8_t* delta,
                                          bf128_t* vs, bf128_t* vs_old, bf128_t* vs_dash, unsigned int round, unsigned int share) {
-  const bf128_t bf_delta  = delta ? bf128_load(delta) : bf128_zero();
+  const uint8_t Mkey = 0;
+  const uint8_t Mtag = 1;
+  const bf128_t bf_delta  = bf128_zero();
   const bf128_t bf_factor = bf128_add(bf128_mul_bit(bf_delta, Mkey), bf128_from_bit(1 ^ Mkey));
   const bf128_t factor =
       bf128_mul_bit(bf128_add(bf128_mul_bit(bf_delta, Mkey), bf128_from_bit(1 ^ Mkey)), 1 ^ Mtag);
@@ -1349,11 +1350,11 @@ static void aes_enc_constraints_128_masked(const uint8_t* in_share, const uint8_
 
     aes_enc_forward_128_1_round(w_share, k_share, in_share, s_share[0], i);
     aes_enc_backward_128_1_round(w_share, k_share, out_share, s_dash_share[0], i, 0);
-    aes_enc_forward_backward_128(vbb, offset, in_share, out_share, 1, 0, NULL, vs_share[0], vs_share_old[0], vs_dash_share[0], i, 0);
+    aes_enc_forward_backward_128(vbb, offset, in_share, out_share, vs_share[0], vs_share_old[0], vs_dash_share[0], i, 0);
     
     aes_enc_forward_128_1_round(w_share + FAEST_128F_L/8, k_share + (FAEST_128F_R + 1) * 128 / 8, in_share + MAX_LAMBDA_BYTES, s_share[1], i);
     aes_enc_backward_128_1_round(w_share + FAEST_128F_L/8, k_share + (FAEST_128F_R + 1) * 128 / 8, out_share + 16, s_dash_share[1], i, 1);
-    aes_enc_forward_backward_128(vbb, offset, in_share + MAX_LAMBDA_BYTES, out_share + MAX_LAMBDA_BYTES, 1, 0, NULL, vs_share[1], vs_share_old[1], vs_dash_share[1], i, 1);
+    aes_enc_forward_backward_128(vbb, offset, in_share + MAX_LAMBDA_BYTES, out_share + MAX_LAMBDA_BYTES, vs_share[1], vs_share_old[1], vs_dash_share[1], i, 1);
 
     for (unsigned int j = 0; j < 16; j++){
       const bf128_t part_a = bf128_add_noinline(vs_share[0][j], s_share[0][j]);
