@@ -1050,3 +1050,78 @@ bf128_add_noinline:
     mov     r3, r2                        // CLEAR
     stmia   r1, {r2, r3}                  // CLEAR
     bx      lr
+
+
+.global bf128_add_wrapper
+bf128_add_wrapper:
+    push    {r4, lr}
+    mov     ip, r0
+    mov     lr, r2
+    ldmia   r1, {r0, r1, r2, r3}
+    sub     sp, #32
+    stmia   sp, {r0, r1, r2, r3}
+    ldmia   lr, {r0, r1, r2, r3}
+    add     r4, sp, #32
+    stmdb   r4, {r0, r1, r2, r3}
+    ldrd    r2, r0, [sp, #8]
+    ldrd    r3, r1, [sp, #24]
+    eors    r3, r2
+    eors    r1, r0
+    str     ip, [ip, #8]                  // CLEAR
+    str     r3, [ip, #8]
+    str     ip, [ip, #12]                 // CLEAR
+    str     r1, [ip, #12]
+    ldrd    r2, r3, [sp, #16]
+    ldrd    r0, r1, [sp]
+    eors    r2, r0
+    eors    r3, r1
+    str     ip, [ip]                      // CLEAR
+    str     ip, [ip, #4]                  // CLEAR
+    strd    r2, r3, [ip]
+    mov     r0, #0                        // CLEAR
+    mov     r1, r0                        // CLEAR
+    mov     r2, r0                        // CLEAR
+    mov     r2, r0                        // CLEAR
+    stmia   sp, {r0, r1, r2, r3}          // CLEAR
+    add     sp, #32
+    stmdb   sp, {r0, r1, r2, r3}          // CLEAR
+    pop     {r4, pc}
+
+
+.global bf128_mul_wrapper
+bf128_mul_wrapper:
+    push    {r4, r5, r6, r7, lr}
+    sub     sp, #44 @ 0x2c
+    mov     r4, r0
+    mov     ip, r1
+    add     r6, r1, #8
+    ldmia   r2, {r0, r1, r2, r3}
+    add     lr, sp, #8
+    stmia   lr, {r0, r1, r2, r3}
+    ldmia   r6, {r0, r1}
+    stmia   sp, {r0, r1}
+    add     r5, sp, #24
+    ldmia   ip, {r2, r3}
+    mov     r0, r5
+
+    mov     r6, #0
+    mov     r7, #0
+    strd    r6, r7, [r4, #8]
+    strd    r6, r7, [r4]
+
+    bl      bf128_mul
+    ldmia   r5, {r0, r1, r2, r3}
+    stmia   r4, {r0, r1, r2, r3}
+
+    mov     r0, #0                        // CLEAR
+    mov     r1, r0                        // CLEAR
+    mov     r2, r0                        // CLEAR
+    mov     r2, r0                        // CLEAR
+    strd    r6, r7, [sp]                  // CLEAR
+    strd    r6, r7, [sp, #8]              // CLEAR
+    strd    r6, r7, [sp, #16]             // CLEAR
+    strd    r6, r7, [sp, #24]             // CLEAR
+    strd    r6, r7, [sp, #32]             // CLEAR
+    str     r6, [sp, #40]                 // CLEAR
+    add     sp, #44 @ 0x2c
+    pop     {r4, r5, r6, r7, pc}
