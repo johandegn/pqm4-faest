@@ -24,6 +24,15 @@
   ((UINT64_C(x7) << 56) | (UINT64_C(x6) << 48) | (UINT64_C(x5) << 40) | (UINT64_C(x4) << 32) |     \
    (UINT64_C(x3) << 24) | (UINT64_C(x2) << 16) | (UINT64_C(x1) << 8) | UINT64_C(x0))
 
+/*
+__attribute__ ((noinline)) bf128_t bf128_add_noinline(bf128_t lhs, bf128_t rhs) {
+  for (unsigned int i = 0; i != ARRAY_SIZE(lhs.values); ++i) {
+    lhs.values[i] ^= rhs.values[i];
+  }
+  return lhs;
+}
+*/
+
 // GF(2^8) implementation
 
 bf8_t bf8_rand(void) {
@@ -50,6 +59,7 @@ bf8_t bf8_reduce(uint8_t C[2]){
   return C[0];
 }
 
+bf8_t bf8_mul(bf8_t a, bf8_t b);
 /*
 #define bf8_mul_w 2
 #define bf8_mul_u_amount (2 << (bf8_mul_w - 1))
@@ -89,6 +99,7 @@ bf8_t bf8_mul(bf8_t a, bf8_t b){
   return bf8_reduce(C);
 }
 */
+
 static bf8_t bf8_square(bf8_t lhs) {
   return bf8_mul(lhs, lhs);
 }
@@ -332,6 +343,7 @@ ATTR_CONST static inline bf128_t bf128_shift_left_1_modulus(bf128_t value) {
   return value;
 }
 
+/*
 #define bf128_mul_w 4
 #define bf128_mul_u_amount (2 << (bf128_mul_w - 1))
 
@@ -376,6 +388,7 @@ bf128_t bf128_mul(bf128_t a, bf128_t b) {
 
   return bf128_reduce(C);
 }
+*/
 
 bf128_t bf128_mul_64(bf128_t lhs, bf64_t rhs) {
   return bf128_mul(lhs, (bf128_t){{rhs, 0}});

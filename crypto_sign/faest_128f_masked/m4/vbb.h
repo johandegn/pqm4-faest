@@ -82,4 +82,6 @@ const bf128_t* get_vole_aes_128_share(vbb_t* vbb, unsigned int idx, unsigned int
 const bf128_t* get_vk_128_share(vbb_t* vbb, unsigned int idx, unsigned int share);
 const uint8_t* get_vole_u_share(vbb_t* vbb, unsigned int share);
 
+void add_vole_to_vk_cache_share(vbb_t* vbb, unsigned int idx, bf128_t* VOLE, unsigned int share);
+
 #endif
