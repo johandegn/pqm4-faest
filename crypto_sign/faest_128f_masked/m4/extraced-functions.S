@@ -743,17 +743,7 @@ aes_key_l3:
     cmp     r3, #32
     add     r7, r7, #128    @ 0x80
     bne     aes_key_loop
-// CLEAR STACK
-    mov     r1, #236
-    mov     r0, #0
-aes_key_clear_loop:
-    subs    r1, #4
-    str     r0, [sp, r1]
-    bne     aes_key_clear_loop
-    ldr     r0, [sp]
-    mov     r2, #0
-    mov     r3, #0
-// END OF CLEAR
+    clear_stack 236 aes_key_clear_loop
     add     sp, #236        @ 0xec
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
@@ -1895,6 +1885,7 @@ aes_enc_forward_backward_128_l11:
     cmp     lr, #4
     add     r4, r4, #64     @ 0x40
     bne     aes_enc_forward_backward_128_l13
+    clear_stack 772 aes_enc_forward_backward_128_clear_loop
     add     sp, sp, #772    @ 0x304
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
