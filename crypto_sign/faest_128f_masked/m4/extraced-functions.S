@@ -1023,35 +1023,6 @@ bf128_mul_clear_loop:
     bx      lr
 
 
-.global bf128_add_noinline
-bf128_add_noinline:
-    sub     sp, #8
-    push    {r4}
-    add     r1, sp, #4
-    stmia   r1, {r2, r3}
-    ldrd    r3, r1, [sp, #28]
-    ldr     r4, [sp, #12]
-    eors    r4, r3
-    str     r4, [r0, #8]
-    ldr     r4, [sp, #20]
-    eors    r2, r4
-    str     r2, [r0, #0]
-    ldr     r2, [sp, #16]
-    eors    r1, r2
-    str     r1, [r0, #12]
-    ldr     r2, [sp, #24]
-    ldr     r1, [sp, #8]
-    pop     {r4}
-    eors    r2, r1
-    str     r2, [r0, #4]
-    add     r1, sp, #4                    // CLEAR
-    add     sp, #8
-    mov     r2, #0                        // CLEAR
-    mov     r3, r2                        // CLEAR
-    stmia   r1, {r2, r3}                  // CLEAR
-    bx      lr
-
-
 .global bf128_add_wrapper
 bf128_add_wrapper:
     push    {r4, lr}

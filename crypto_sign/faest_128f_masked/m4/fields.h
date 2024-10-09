@@ -214,7 +214,6 @@ ATTR_CONST static inline bf128_t bf128_add(bf128_t lhs, bf128_t rhs) {
 bf128_t bf128_mul(bf128_t lhs, bf128_t rhs);
 void bf128_mul_wrapper(bf128_t *out, const bf128_t *lhs, const bf128_t *rhs);
 void bf128_add_wrapper(bf128_t *out, const bf128_t *lhs, const bf128_t *rhs);
-bf128_t bf128_add_noinline(bf128_t lhs, bf128_t rhs);
 ATTR_CONST bf128_t bf128_mul_64(bf128_t lhs, bf64_t rhs);
 #if defined(HAVE_ATTR_VECTOR_SIZE)
 #define bf128_mul_bit(lhs, rhs) ((lhs) & -((uint64_t)(rhs)&1))
