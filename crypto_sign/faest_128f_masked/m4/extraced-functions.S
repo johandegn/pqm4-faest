@@ -1,6 +1,20 @@
 .syntax unified
 .thumb
 .global compute_sbox_masked
+
+.align 8
+.macro clear_stack, size, label
+    mov     r1, #\size
+    mov     r0, #0
+\label:
+    subs    r1, #4
+    str     r0, [sp, r1]
+    bne     \label
+    ldr     r0, [sp]
+    mov     r2, #0
+    mov     r3, #0
+.endm
+
 compute_sbox_masked:
     push    {r4, r5, r6, lr}
     sub     sp, #4
@@ -1004,17 +1018,7 @@ bf128_mul_l5:
     mov     r0, r8
     strd    r5, r1, [r8]
     strd    r2, r4, [r8, #8]
-// CLEAR STACK
-    mov     r1, #300
-    mov     r0, #0
-bf128_mul_clear_loop:
-    subs    r1, #4
-    str     r0, [sp, r1]
-    bne     bf128_mul_clear_loop
-    ldr     r0, [sp]
-    mov     r2, #0
-    mov     r3, #0
-// END OF CLEAR
+    clear_stack 300 bf128_mul_clear_loop
     add     sp, #300        @ 0x12c
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     str     r0, [sp]                        // CLEAR
@@ -1096,3 +1100,103 @@ bf128_mul_wrapper:
     str     r6, [sp, #40]                 // CLEAR
     add     sp, #44 @ 0x2c
     pop     {r4, r5, r6, r7, pc}
+
+.global bf128_byte_combine
+bf128_byte_combine:
+    stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+    ldrd    fp, sl, [r1]
+    sub     sp, #68 @ 0x44
+    ldr     r9, [r1, #8]
+    ldr     r8, [r1, #12]
+    str     r0, [sp, #28]
+    add     r4, r1, #16
+    movs    r7, #0
+    add     r5, sp, #32
+    add     r6, sp, #8
+bf128_byte_combine_loop:
+    mov     r1, r7
+    mov     r0, r5
+    bl      bf128_alpha_wrapper
+    ldmia   r5, {r0, r1, r2, r3}
+    stmia   r6, {r0, r1, r2, r3}
+    add     ip, r4, #8
+    ldmia   ip, {r0, r1}
+    stmia   sp, {r0, r1}
+    add     r0, sp, #48     @ 0x30
+    ldmia   r4, {r2, r3}
+    bl      bf128_mul
+    ldrd    r2, r3, [sp, #48]       @ 0x30
+    adds    r7, #1
+    eor     fp, r2, fp
+    eor     sl, r3, sl
+    ldr     r2, [sp, #56]   @ 0x38
+    ldr     r3, [sp, #60]   @ 0x3c
+    cmp     r7, #7
+    eor     r9, r2, r9
+    add     r4, r4, #16
+    eor     r8, r3, r8
+    bne     bf128_byte_combine_loop
+    ldr     r3, [sp, #28]
+    mov     r0, r3
+    strd    fp, sl, [r3]
+    strd    r9, r8, [r3, #8]
+    clear_stack 68 bf128_byte_combine_clear_loop
+    add     sp, #68 @ 0x44
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+
+.global bf128_byte_combine_vk_share
+bf128_byte_combine_vk_share:
+    stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+    sub     sp, #76 @ 0x4c
+    mov     r5, r1
+    mov     fp, r2
+    str     r1, [sp, #28]
+    mov     r2, r3
+    mov     r4, r0
+    mov     r1, fp
+    mov     r0, r5
+    str     r3, [sp, #24]
+    bl      get_vk_128_share
+    add     r3, sp, #8
+    ldrd    sl, r9, [r0]
+    ldrd    r8, r7, [r0, #8]
+    strd    r3, r4, [sp, #32]
+    add     fp, fp, #1
+    movs    r6, #0
+    add     r5, sp, #40     @ 0x28
+bf128_byte_combine_vk_share_loop:
+    ldr     r2, [sp, #24]
+    ldr     r0, [sp, #28]
+    add     r1, fp, r6
+    bl      get_vk_128_share
+    mov     r1, r6
+    mov     r4, r0
+    mov     r0, r5
+    bl      bf128_alpha_wrapper
+    ldmia   r5, {r0, r1, r2, r3}
+    ldr     lr, [sp, #32]
+    stmia   lr, {r0, r1, r2, r3}
+    add     ip, r4, #8
+    ldmia   ip, {r0, r1}
+    stmia   sp, {r0, r1}
+    add     r0, sp, #56     @ 0x38
+    ldmia   r4, {r2, r3}
+    bl      bf128_mul
+    ldr     r3, [sp, #56]   @ 0x38
+    eor     sl, sl, r3
+    ldr     r3, [sp, #60]   @ 0x3c
+    eor     r9, r9, r3
+    ldr     r3, [sp, #64]   @ 0x40
+    adds    r6, #1
+    eor     r8, r8, r3
+    ldr     r3, [sp, #68]   @ 0x44
+    cmp     r6, #7
+    eor     r7, r7, r3
+    bne     bf128_byte_combine_vk_share_loop
+    ldr     r4, [sp, #36]   @ 0x24
+    mov     r0, r4
+    strd    sl, r9, [r4]
+    strd    r8, r7, [r4, #8]
+    clear_stack 76 bf128_byte_combine_vk_share_clear_loop
+    add     sp, #76 @ 0x4c
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}

@@ -208,7 +208,11 @@ static const bf128_t bf128_alpha[7] = {
     BF128C(U64C(0xbc, 0xf9, 0x36, 0xe1, 0x94, 0x8e, 0x7a, 0x7a),
            U64C(0xe0, 0x8f, 0xb7, 0x4f, 0x1a, 0x31, 0x50, 0x09)),
 };
+bf128_t __attribute__ ((noinline)) bf128_alpha_wrapper(unsigned int i) {
+  return bf128_alpha[i];
+}
 
+/*
 bf128_t bf128_byte_combine(const bf128_t* x) {
   bf128_t bf_out = x[0];
   for (unsigned int i = 1; i < 8; ++i) {
@@ -216,10 +220,11 @@ bf128_t bf128_byte_combine(const bf128_t* x) {
   }
   return bf_out;
 }
+*/
 bf128_t bf128_byte_combine_vk(vbb_t* vbb, unsigned int offset){
   return bf128_byte_combine_vk_share(vbb, offset, 0);
 }
-
+/*
 bf128_t bf128_byte_combine_vk_share(vbb_t* vbb, unsigned int offset, int share) {
   bf128_t bf_out = *get_vk_128_share(vbb, offset, share);
   for (unsigned int i = 1; i < 8; ++i) {
@@ -227,6 +232,7 @@ bf128_t bf128_byte_combine_vk_share(vbb_t* vbb, unsigned int offset, int share) 
   }
   return bf_out;
 }
+*/
 bf128_t bf128_byte_combine_vbb(vbb_t* vbb, unsigned int offset) {
   bf128_t bf_out = *get_vole_aes_128(vbb, offset);
   for (unsigned int i = 1; i < 8; ++i) {
