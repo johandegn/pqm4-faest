@@ -1,7 +1,15 @@
-2024-08-28 09:21:38,869 BoardTestCase INFO: Runnning bikel3 - m4f - test
-2024-08-28 09:21:38,869 Implementation INFO: Building bikel3 - m4f - test
-2024-08-28 09:21:44,828 Implementation DEBUG: make stdout output:
-Variable PLATFORM changed, forcing rebuild!
-  GEN     obj/.config.mk
-  CC      elf/crypto_kem_bikel3_m4f_test.elf
-  OBJCOPY bin/crypto_kem_bikel3_m4f_test.hex
+2024-10-08 15:38:34,592 BoardTestCase INFO: Running faest_128f_masked - ref on host
+2024-10-08 15:38:34,885 Implementation DEBUG: make stdout output:
+make: 'bin-host/crypto_sign_faest_128f_masked_ref_testvectors' is up to date.
+2024-10-08 15:38:35,672 BoardTestCase INFO: Runnning faest_128f_masked - ref - testvectors
+2024-10-08 15:38:35,672 Implementation INFO: Building faest_128f_masked - ref - testvectors
+2024-10-08 15:38:35,965 Implementation DEBUG: make stdout output:
+make: 'bin/crypto_sign_faest_128f_masked_ref_testvectors.hex' is up to date.
+2024-10-08 15:38:41,698 Platform DEBUG: Found start pattern: b'=========================\n'
+2024-10-08 15:40:35,496 BoardTestCase INFO: Test faest_128f_masked - ref - testvectors Successful
+2024-10-08 15:40:35,497 BoardTestCase INFO: Runnning faest_128f_masked - m4 - testvectors
+2024-10-08 15:40:35,497 Implementation INFO: Building faest_128f_masked - m4 - testvectors
+2024-10-08 15:40:35,803 Implementation DEBUG: make stdout output:
+OBJCOPY bin/crypto_sign_faest_128f_masked_m4_testvectors.hex
+2024-10-08 15:40:41,414 Platform DEBUG: Found start pattern: b'=========================\n'
+2024-10-08 15:40:50,962 BoardTestCase ERROR: Test faest_128f_masked - m4 - testvectors Failed!

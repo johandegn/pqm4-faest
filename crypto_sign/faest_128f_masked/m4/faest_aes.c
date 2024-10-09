@@ -424,7 +424,7 @@ static void aes_key_schedule_backward_128_vbb_vk_round(vbb_t* vbb, bf128_t* bf_o
 */
 
 
-static void __attribute__ ((noinline)) aes_key_schedule_128_masked(const uint8_t* w_share, vbb_t* vbb,
+static void aes_key_schedule_128_masked(const uint8_t* w_share, vbb_t* vbb,
                                                     zk_hash_128_ctx* a0_ctx,
                                                     zk_hash_128_ctx* a1_ctx, uint8_t* k,
                                                     const faest_paramset_t* params) {
@@ -468,8 +468,6 @@ static void __attribute__ ((noinline)) aes_key_schedule_128_masked(const uint8_t
       bf128_add_wrapper(&part_b, bf_w_dash_hat_share[0] + r, bf_v_w_dash_hat_share[0] + r);
       bf128_add_wrapper(&part_d, bf_k_hat_share[1] + r, bf_v_k_hat_share[1] + r);
       bf128_add_wrapper(&part_c, bf_v_w_dash_hat_share[1] + r, bf_w_dash_hat_share[1] + r);
-
-
 
       bf128_t tmp_x;
       // instead of storing in A0, A1, hash it

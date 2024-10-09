@@ -42,23 +42,23 @@ compute_sbox_masked:
 aes_extend_witness_masked_output:
     adds    r2, #7
     lsrs    r2, r2, #3
-    beq.n   aes_extend_witness_masked_output_early_return
+    beq     aes_extend_witness_masked_output_early_return
     push    {r4, r5, lr}
     adds    r5, r0, r2
-    add.w   ip, r0, #4294967295     @ 0xffffffff
-    add.w   lr, r0, r2, lsl #1
+    add     ip, r0, #4294967295     @ 0xffffffff
+    add     lr, r0, r2, lsl #1
     mov     r3, r5
 aes_extend_witness_masked_output_loop: 
     ldr     r4, [r1, #0]
     subs    r2, r3, r5
     ldrb    r4, [r4, r2]
-    strb.w  r4, [ip, #1]!
+    strb    r4, [ip, #1]!
     strb    r1, [r3]                // CLEAR
     ldr     r4, [r1, #4]
     ldrb    r2, [r4, r2]
-    strb.w  r2, [r3], #1
+    strb    r2, [r3], #1
     cmp     r3, lr
-    bne.n   aes_extend_witness_masked_output_loop
+    bne     aes_extend_witness_masked_output_loop
     mov     r4, #7                  // CLEAR
     pop     {r4, r5, pc}
 aes_extend_witness_masked_output_early_return:
@@ -255,8 +255,8 @@ aes_encrypt_round_masked:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     sub     sp, #20
     ldrd    r5, sl, [sp, #56]       @ 0x38
-    add.w   r9, r0, #32
-    ldr.w   fp, [sp, #64]   @ 0x40
+    add     r9, r0, #32
+    ldr     fp, [sp, #64]   @ 0x40
     mov     r4, r1
     mov     r6, r2
     mov     r2, r1
@@ -278,7 +278,7 @@ aes_encrypt_round_masked:
     mov     r2, #7                              // CLEAR
     strd    r0, r2, [sp, #4]                    // CLEAR
     strd    sl, fp, [sp, #4]
-    add.w   r2, r6, #480    @ 0x1e0
+    add     r2, r6, #480    @ 0x1e0
     ldr     r3, [r7, #4]
     str     r5, [sp, #0]
     mov     r0, r9
@@ -288,7 +288,7 @@ aes_encrypt_round_masked:
     mov     r2, #7                              // CLEAR
     strd    r0, r2, [sp, #4]                    // CLEAR
     ldr     r3, [r5, #0]
-    add.w   r3, r3, r4, lsl #2
+    add     r3, r3, r4, lsl #2
     str     r3, [r5, #0]
     // CLEAR STACK
     mov     r1, #0
@@ -298,7 +298,7 @@ aes_encrypt_round_masked:
     str     r1, [sp, #12]
     str     r1, [sp, #16]
     add     sp, #20
-    ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
 .global bf8_mul
 bf8_mul:
@@ -357,31 +357,31 @@ bf8_inv_masked:
     bl      bf64_rand
     ldr     r3, =0x80808081
     adds    r4, r0, r1
-    adc.w   r4, r4, #0
+    adc     r4, r4, #0
     umull   r3, ip, r3, r4
-    mov.w   ip, ip, lsr #7
+    mov     ip, ip, lsr #7
     rsb     ip, ip, ip, lsl #8
-    sub.w   r4, r4, ip
+    sub     r4, r4, ip
     adds    r4, #1
     uxtb    r4, r4
-    ldrb.w  r0, [r8]
+    ldrb    r0, [r8]
     mov     r1, r4
     bl      bf8_mul
     ldrb    r1, [r7, #0]
     mov     r8, r0
     mov     r0, r4
     bl      bf8_mul
-    eor.w   r0, r8, r0
+    eor     r0, r8, r0
     uxtb    r0, r0
     bl      bf8_inv
     movs    r3, #0
     mov     r7, r0
     movs    r1, #1
-    add.w   r0, sp, #7
-    strb.w  r3, [sp, #7]
+    add     r0, sp, #7
+    strb    r3, [sp, #7]
     bl      rand_mask
-    ldrb.w  r8, [sp, #7]
-    eor.w   r0, r8, r7
+    ldrb    r8, [sp, #7]
+    eor     r0, r8, r7
     mov     r1, r4
     uxtb    r0, r0
     bl      bf8_mul
@@ -397,7 +397,7 @@ bf8_inv_masked:
     str     r1, [sp]
     str     r1, [sp, #4]
     add     sp, #8
-    ldmia.w sp!, {r4, r5, r6, r7, r8, pc}
+    ldmia   sp!, {r4, r5, r6, r7, r8, pc}
 
 
 .global expand_128key_masked
@@ -414,71 +414,71 @@ expand_128key_masked:
 expand_128key_masked_l2:
     udiv    ip, r0, r4
     mls     r3, r4, ip, r0
-    add.w   r3, r3, ip, lsl #3
-    ldrb.w  ip, [r2]
-    strb.w  ip, [r6, r3, lsl #2]
-    add.w   r3, r6, r3, lsl #2
-    ldrb.w  ip, [r2, #1]
-    strb.w  ip, [r3, #1]
-    ldrb.w  ip, [r2, #2]
-    strb.w  ip, [r3, #2]
+    add     r3, r3, ip, lsl #3
+    ldrb    ip, [r2]
+    strb    ip, [r6, r3, lsl #2]
+    add     r3, r6, r3, lsl #2
+    ldrb    ip, [r2, #1]
+    strb    ip, [r3, #1]
+    ldrb    ip, [r2, #2]
+    strb    ip, [r3, #2]
     mov     ip, r0
     adds    r0, #1
-    ldrb.w  lr, [r2, #3]
-    strb.w  lr, [r3, #3]
+    ldrb    lr, [r2, #3]
+    strb    lr, [r3, #3]
     cmp     r7, r0
-    add.w   r2, r2, #4
-    bne.n   expand_128key_masked_l2
+    add     r2, r2, #4
+    bne     expand_128key_masked_l2
     movs    r2, #0
 expand_128key_masked_l3:
     udiv    r0, r2, r4
     mls     r3, r4, r0, r2
-    add.w   r3, r3, r0, lsl #3
-    add.w   r3, r6, r3, lsl #2
-    ldrb.w  r0, [r1, #32]
-    strb.w  r0, [r3, #480]  @ 0x1e0
-    ldrb.w  r0, [r1, #33]   @ 0x21
-    strb.w  r0, [r3, #481]  @ 0x1e1
-    ldrb.w  r0, [r1, #34]   @ 0x22
-    strb.w  r0, [r3, #482]  @ 0x1e2
-    ldrb.w  lr, [r1, #35]   @ 0x23
-    strb.w  lr, [r3, #483]  @ 0x1e3
+    add     r3, r3, r0, lsl #3
+    add     r3, r6, r3, lsl #2
+    ldrb    r0, [r1, #32]
+    strb    r0, [r3, #480]  @ 0x1e0
+    ldrb    r0, [r1, #33]   @ 0x21
+    strb    r0, [r3, #481]  @ 0x1e1
+    ldrb    r0, [r1, #34]   @ 0x22
+    strb    r0, [r3, #482]  @ 0x1e2
+    ldrb    lr, [r1, #35]   @ 0x23
+    strb    lr, [r3, #483]  @ 0x1e3
     cmp     ip, r2
-    add.w   r1, r1, #4
-    add.w   r2, r2, #1
-    bne.n   expand_128key_masked_l3
+    add     r1, r1, #4
+    add     r2, r2, #1
+    bne     expand_128key_masked_l3
 expand_128key_masked_l1:
     mla     r9, r5, r4, r4
     cmp     r7, r9
-    bcs.n   expand_128key_masked_l4_step
+    bcs     expand_128key_masked_l4_step
     mov     r5, r7
-    add.w   r8, r6, #480    @ 0x1e0
-    b.n     expand_128key_masked_l5
+    add     r8, r6, #480    @ 0x1e0
+    b       expand_128key_masked_l5
 expand_128key_masked_l6:
     uxtb    r1, r3
     mov     r3, #0                          // CLEAR
     subs    r3, r5, r7
     udiv    r2, r3, r4
     mls     r3, r4, r2, r3
-    add.w   r3, r3, r2, lsl #3
-    ldrb.w  lr, [sp, #1]
-    ldrb.w  ip, [sp, #2]
+    add     r3, r3, r2, lsl #3
+    ldrb    lr, [sp, #1]
+    ldrb    ip, [sp, #2]
     udiv    r0, r5, r4
     movs    r2, #0
     bfi     r2, r1, #0, #8
     mov     r1, #0                          // CLEAR
     bfi     r2, lr, #8, #8
     mov     lr, #0                          // CLEAR
-    ldrb.w  lr, [sp, #3]
+    ldrb    lr, [sp, #3]
     mls     r1, r4, r0, r5
     bfi     r2, ip, #16, #8
     mov     ip, #0                          // CLEAR
-    ldr.w   ip, [r6, r3, lsl #2]
-    add.w   r1, r1, r0, lsl #3
+    ldr     ip, [r6, r3, lsl #2]
+    add     r1, r1, r0, lsl #3
     bfi     r2, lr, #24, #8
     mov     lr, #0                          // CLEAR
-    eor.w   r2, r2, ip
-    str.w   r2, [r6, r1, lsl #2]
+    eor     r2, r2, ip
+    str     r2, [r6, r1, lsl #2]
     nop                                     // CLEAR
     ldr     ip, [sp, #40]                   // CLEAR
     nop                                     // CLEAR
@@ -488,14 +488,14 @@ expand_128key_masked_l6:
     nop                                     // CLEAR
     ldr     r2, [sp, #4]
     ldr     ip, [sp, #40]                   // CLEAR
-    ldr.w   r3, [r8, r3, lsl #2]
+    ldr     r3, [r8, r3, lsl #2]
     ldr     ip, [sp, #40]                   // CLEAR
     adds    r5, #1
     eors    r3, r2
     cmp     r5, r9
-    str.w   r3, [r8, r1, lsl #2]
+    str     r3, [r8, r1, lsl #2]
     str     r6, [sp, #4]                    // CLEAR
-    bne.n   expand_128key_masked_l5
+    bne     expand_128key_masked_l5
 expand_128key_masked_l4_step:
     b       expand_128key_masked_l4
 expand_128key_masked_l5:
@@ -516,32 +516,32 @@ expand_128key_masked_l5:
     subs    r3, r5, #1
     udiv    r2, r3, r4
     mls     r3, r4, r2, r3
-    add.w   r3, r3, r2, lsl #3
-    add.w   r2, r3, #120    @ 0x78
-    ldr.w   r3, [r6, r3, lsl #2]
+    add     r3, r3, r2, lsl #3
+    add     r2, r3, #120    @ 0x78
+    ldr     r3, [r6, r3, lsl #2]
     ldr     r1, [sp, #40]                   // CLEAR
     str     r3, [sp, #0]
     str     r6, [sp, #4]                    // CLEAR
     nop                                     // CLEAR
-    ldr.w   r1, [r6, r2, lsl #2]
+    ldr     r1, [r6, r2, lsl #2]
     ldr     r2, [sp, #40]                   // CLEAR
     str     r1, [sp, #4]
     str     r2, [sp, #40]                   // CLEAR
     mls     r2, r7, sl, r5
     cmp     r2, #0
-    bne.n   expand_128key_masked_l6
+    bne     expand_128key_masked_l6
     mov     r0, sp
     bl      rot_word
     add     r0, sp, #4
     bl      rot_word
     mov     r0, sp
     bl      sub_words_masked
-    add.w   r0, sl, #4294967295     @ 0xffffffff
+    add     r0, sl, #4294967295     @ 0xffffffff
     uxtb    r0, r0
     bl      round_constants
-    ldrb.w  r3, [sp]
+    ldrb    r3, [sp]
     eors    r3, r0
-    b.n     expand_128key_masked_l6
+    b       expand_128key_masked_l6
 expand_128key_masked_l4:
     // CLEAR STACK
     mov     r3, #0
@@ -554,14 +554,14 @@ expand_128key_masked_l4:
     str     r1, [sp]
     str     r1, [sp, #4]
     add     sp, #8
-    ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 
 
 .global rot_word
 rot_word:
     sub     sp, #4
 
-    ldrb.w  ip, [r0, #1]
+    ldrb    ip, [r0, #1]
     ldrb    r2, [r0, #2]
     ldrb    r1, [r0, #3]
     movs    r3, #0
@@ -607,8 +607,8 @@ aes_key_init_clear_loop:
     add     r3, sp, #48     @ 0x30
     mov     r6, r0
     mov     r7, r1
-    ldmia.w r3, {r0, r1}
-    stmia.w sp, {r0, r1}
+    ldmia   r3, {r0, r1}
+    stmia   sp, {r0, r1}
     movs    r5, #0
     str     r5, [sp, #8]
     add     r3, sp, #40     @ 0x28
@@ -616,20 +616,20 @@ aes_key_init_clear_loop:
     add     r0, sp, #56     @ 0x38
     lsls    r4, r4, #3
     bl      bf128_mul_bit
-    add.w   r3, r4, #128    @ 0x80
+    add     r3, r4, #128    @ 0x80
     str     r3, [sp, #28]
     ldr     r3, [sp, #56]   @ 0x38
     str     r5, [sp, #20]
-    eor.w   lr, r3, #1
+    eor     lr, r3, #1
     add     r3, sp, #56     @ 0x38
     ldmia   r3, {r0, r1, r2, r3}
     add     r5, sp, #104    @ 0x68
-    stmia.w r5, {r0, r1, r2, r3}
-    str.w   lr, [sp, #104]  @ 0x68
-    ldmia.w r5, {r0, r1, r2, r3}
-    add.w   r9, sp, #56     @ 0x38
-    ldr.w   ip, [sp, #60]   @ 0x3c
-    stmia.w r9, {r0, r1, r2, r3}
+    stmia   r5, {r0, r1, r2, r3}
+    str     lr, [sp, #104]  @ 0x68
+    ldmia   r5, {r0, r1, r2, r3}
+    add     r9, sp, #56     @ 0x38
+    ldr     ip, [sp, #60]   @ 0x3c
+    stmia   r9, {r0, r1, r2, r3}
     strd    ip, lr, [sp, #32]
     add     r4, sp, #72     @ 0x48
     mov     sl, r6
@@ -637,7 +637,7 @@ aes_key_loop:
     ldr     r3, [sp, #28]
     ldr     r2, [sp, #20]
     mov     fp, r5
-    add.w   r9, r3, r2
+    add     r9, r3, r2
     mov     r6, r5
 aes_key_l1:
     mov     r1, r9
@@ -645,19 +645,19 @@ aes_key_l1:
     mov     r0, sl
     bl      get_vole_aes_128_share
     ldmia   r0, {r0, r1, r2, r3}
-    stmia.w r4, {r0, r1, r2, r3}
+    stmia   r4, {r0, r1, r2, r3}
     mov     r1, r9
     mov     r3, r8
     mov     r2, r4
     mov     r0, sl
     bl      add_vole_to_vk_cache_share
-    ldmia.w r4, {r0, r1, r2, r3}
-    stmia.w r6, {r0, r1, r2, r3}
+    ldmia   r4, {r0, r1, r2, r3}
+    stmia   r6, {r0, r1, r2, r3}
     adds    r6, #16
     add     r3, sp, #232    @ 0xe8
     cmp     r6, r3
-    add.w   r9, r9, #1
-    bne.n   aes_key_l1
+    add     r9, r9, #1
+    bne     aes_key_l1
     ldrd    r2, r3, [sp, #20]
     adds    r6, r3, r2
 aes_key_l2:
@@ -667,65 +667,65 @@ aes_key_l2:
     bl      get_vk_128_share
     ldrd    r1, r3, [r0, #8]
     ldrd    ip, r2, [r0]
-    ldr.w   r0, [fp, #8]
+    ldr     r0, [fp, #8]
     eors    r1, r0
-    str.w   r1, [fp, #8]
-    ldr.w   r1, [fp, #12]
+    str     r1, [fp, #8]
+    ldr     r1, [fp, #12]
     eors    r3, r1
-    str.w   r3, [fp, #12]
-    ldr.w   r3, [fp]
-    eor.w   r3, r3, ip
-    str.w   r3, [fp]
-    ldr.w   r3, [fp, #4]
+    str     r3, [fp, #12]
+    ldr     r3, [fp]
+    eor     r3, r3, ip
+    str     r3, [fp]
+    ldr     r3, [fp, #4]
     eors    r3, r2
-    str.w   r3, [fp, #4]
-    add.w   fp, fp, #16
+    str     r3, [fp, #4]
+    add     fp, fp, #16
     add     r3, sp, #232    @ 0xe8
     cmp     fp, r3
-    add.w   r6, r6, #1
-    bne.n   aes_key_l2
+    add     r6, r6, #1
+    bne     aes_key_l2
     mov     r2, r7
     movs    r3, #7
     mov     fp, r7
 aes_key_l3:
     subs    r6, r3, #2
-    and.w   r0, r3, #7
-    and.w   r6, r6, #7
-    add.w   ip, r5, r6, lsl #4
-    add.w   r9, r5, r0, lsl #4
+    and     r0, r3, #7
+    and     r6, r6, #7
+    add     ip, r5, r6, lsl #4
+    add     r9, r5, r0, lsl #4
     lsls    r6, r6, #4
     lsls    r0, r0, #4
     ldr     r6, [r5, r6]
     ldr     r0, [r5, r0]
-    ldr.w   r7, [r9, #8]
+    ldr     r7, [r9, #8]
     subs    r1, r3, #5
-    and.w   r1, r1, #7
+    and     r1, r1, #7
     eors    r0, r6
-    add.w   r6, r5, r1, lsl #4
+    add     r6, r5, r1, lsl #4
     lsls    r1, r1, #4
     adds    r3, #1
     ldr     r1, [r5, r1]
     eors    r0, r1
-    ldr.w   r1, [ip, #8]
-    eor.w   lr, r7, r1
-    ldr.w   r7, [ip, #12]
-    ldr.w   r1, [r9, #12]
-    ldr.w   r9, [r9, #4]
+    ldr     r1, [ip, #8]
+    eor     lr, r7, r1
+    ldr     r7, [ip, #12]
+    ldr     r1, [r9, #12]
+    ldr     r9, [r9, #4]
     eors    r1, r7
-    ldr.w   r7, [ip, #4]
-    eor.w   ip, r9, r7
+    ldr     r7, [ip, #4]
+    eor     ip, r9, r7
     ldr     r7, [r6, #8]
-    eor.w   lr, lr, r7
+    eor     lr, lr, r7
     ldr     r7, [r6, #12]
     eors    r7, r1
     ldr     r1, [r6, #4]
     str     r0, [r2, #0]
-    eor.w   r1, ip, r1
+    eor     r1, ip, r1
     cmp     r3, #15
     strd    r1, lr, [r2, #4]
     str     r7, [r2, #12]
-    add.w   r2, r2, #16
-    bne.n   aes_key_l3
+    add     r2, r2, #16
+    bne     aes_key_l3
     ldr     r3, [sp, #36]   @ 0x24
     str     r3, [sp, #56]   @ 0x38
     movs    r6, #0
@@ -733,8 +733,8 @@ aes_key_l3:
     str     r3, [sp, #60]   @ 0x3c
     str     r6, [sp, #8]
     add     r3, sp, #64     @ 0x40
-    ldmia.w r3, {r0, r1}
-    stmia.w sp, {r0, r1}
+    ldmia   r3, {r0, r1}
+    stmia   sp, {r0, r1}
     add     r3, sp, #56     @ 0x38
     ldmia   r3, {r2, r3}
     add     r0, sp, #88     @ 0x58
@@ -743,20 +743,20 @@ aes_key_l3:
     ldrd    r1, r2, [fp, #8]
     ldr     r0, [sp, #96]   @ 0x60
     eors    r1, r0
-    str.w   r1, [fp, #8]
+    str     r1, [fp, #8]
     ldr     r1, [sp, #100]  @ 0x64
     ldrd    r3, r6, [fp]
     eors    r2, r1
-    str.w   r2, [fp, #12]
+    str     r2, [fp, #12]
     ldr     r2, [sp, #88]   @ 0x58
     eors    r3, r2
-    str.w   r3, [fp]
+    str     r3, [fp]
     ldr     r3, [sp, #92]   @ 0x5c
     eors    r6, r3
     add     r3, sp, #64     @ 0x40
-    ldmia.w r3, {r0, r1}
-    str.w   r6, [fp, #4]
-    stmia.w sp, {r0, r1}
+    ldmia   r3, {r0, r1}
+    str     r6, [fp, #4]
+    stmia   sp, {r0, r1}
     add     r3, sp, #56     @ 0x38
     ldmia   r3, {r2, r3}
     add     r0, sp, #88     @ 0x58
@@ -767,22 +767,22 @@ aes_key_l3:
     str     r3, [sp, #20]
     ldr     r3, [sp, #96]   @ 0x60
     eors    r3, r0
-    str.w   r3, [fp, #40]   @ 0x28
+    str     r3, [fp, #40]   @ 0x28
     ldr     r3, [sp, #100]  @ 0x64
     ldrd    r2, r6, [fp, #32]
     eors    r3, r1
-    str.w   r3, [fp, #44]   @ 0x2c
+    str     r3, [fp, #44]   @ 0x2c
     ldr     r3, [sp, #88]   @ 0x58
     eors    r3, r2
-    str.w   r3, [fp, #32]
+    str     r3, [fp, #32]
     ldr     r3, [sp, #92]   @ 0x5c
     eors    r3, r6
-    str.w   r3, [fp, #36]   @ 0x24
+    str     r3, [fp, #36]   @ 0x24
     ldr     r3, [sp, #20]
     mov     r7, fp
     cmp     r3, #32
-    add.w   r7, r7, #128    @ 0x80
-    bne.w   aes_key_loop
+    add     r7, r7, #128    @ 0x80
+    bne     aes_key_loop
 // CLEAR STACK
     mov     r1, #236
     mov     r0, #0
@@ -795,7 +795,7 @@ aes_key_clear_loop:
     mov     r3, #0
 // END OF CLEAR
     add     sp, #236        @ 0xec
-    ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
 
 .global bf128_mul
@@ -804,12 +804,12 @@ bf128_mul:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     sub     sp, #300        @ 0x12c
     add     r1, sp, #336    @ 0x150
-    stmia.w r1, {r2, r3}
+    stmia   r1, {r2, r3}
     add     r3, sp, #352    @ 0x160
     mov     r8, r0
     ldmia   r3, {r0, r1, r2, r3}
     add     r6, sp, #56     @ 0x38
-    stmia.w r6, {r0, r1, r2, r3}
+    stmia   r6, {r0, r1, r2, r3}
     movs    r4, #0
     movs    r5, #0
     movs    r7, #0
@@ -818,188 +818,188 @@ bf128_mul:
     mov     ip, r7
     add     r5, sp, #40     @ 0x28
     add     r4, sp, #8
-    str.w   r8, [sp, #4]
+    str     r8, [sp, #4]
 bf128_mul_l3:
     movs    r3, #1
-    lsl.w   r3, r3, ip
-    add.w   r2, r5, r3, lsl #4
+    lsl     r3, r3, ip
+    add     r2, r5, r3, lsl #4
     ldrd    r1, r7, [r2, #8]
     lsls    r3, r3, #4
     adds    r1, r1, r1
     ldr     r3, [r5, r3]
     ldr     r0, [r2, #4]
-    mov.w   r6, r7, asr #31
-    and.w   r6, r6, #135    @ 0x87
+    mov     r6, r7, asr #31
+    and     r6, r6, #135    @ 0x87
     adcs    r7, r7
     adds    r3, r3, r3
-    eor.w   r6, r6, r3
+    eor     r6, r6, r3
     ldr     r3, [r5, #24]
-    orr.w   r1, r1, r0, lsr #31
-    eor.w   r8, r1, r3
+    orr     r1, r1, r0, lsr #31
+    eor     r8, r1, r3
     ldr     r3, [r5, #28]
-    eor.w   r9, r7, r3
+    eor     r9, r7, r3
     ldr     r3, [r5, #16]
-    mov.w   r2, #2
-    eor.w   sl, r3, r6
+    mov     r2, #2
+    eor     sl, r3, r6
     ldr     r3, [r5, #20]
-    lsl.w   r2, r2, ip
+    lsl     r2, r2, ip
     adcs    r0, r0
-    add.w   lr, r2, #1
-    eor.w   fp, r3, r0
-    add.w   r3, r5, r2, lsl #4
+    add     lr, r2, #1
+    eor     fp, r3, r0
+    add     r3, r5, r2, lsl #4
     strd    r1, r7, [r3, #8]
     lsls    r2, r2, #4
-    add.w   r1, r5, lr, lsl #4
-    mov.w   lr, lr, lsl #4
+    add     r1, r5, lr, lsl #4
+    mov     lr, lr, lsl #4
     str     r6, [r5, r2]
     strd    r8, r9, [r1, #8]
     str     r0, [r3, #4]
-    str.w   sl, [r5, lr]
-    str.w   fp, [r1, #4]
-    cmp.w   ip, #0
-    beq.n   bf128_mul_l1
-    add.w   lr, r4, r2
+    str     sl, [r5, lr]
+    str     fp, [r1, #4]
+    cmp     ip, #0
+    beq     bf128_mul_l1
+    add     lr, r4, r2
     adds    r2, #8
     mov     r1, r5
     add     r2, r5
 bf128_mul_l2:
     ldrd    r6, r7, [r1, #40]       @ 0x28
     ldr     r0, [r2, #0]
-    ldr.w   r9, [r2, #-4]
+    ldr     r9, [r2, #-4]
     eors    r6, r0
     ldr     r0, [r2, #4]
-    eor.w   r8, r0, r7
+    eor     r8, r0, r7
     ldr     r0, [r1, #32]
-    ldr.w   r7, [r2, #-8]
+    ldr     r7, [r2, #-8]
     eors    r0, r7
     ldr     r7, [r1, #36]   @ 0x24
     str     r0, [r3, #32]
     adds    r1, #16
-    eor.w   r7, r7, r9
+    eor     r7, r7, r9
     cmp     lr, r1
     strd    r7, r6, [r3, #36]       @ 0x24
-    str.w   r8, [r3, #44]   @ 0x2c
-    add.w   r3, r3, #16
-    bne.n   bf128_mul_l2
+    str     r8, [r3, #44]   @ 0x2c
+    add     r3, r3, #16
+    bne     bf128_mul_l2
 bf128_mul_l1:
-    add.w   ip, ip, #1
-    cmp.w   ip, #3
-    bne.n   bf128_mul_l3
-    ldr.w   r8, [sp, #4]
+    add     ip, ip, #1
+    cmp     ip, #3
+    bne     bf128_mul_l3
+    ldr     r8, [sp, #4]
     movs    r2, #32
     movs    r1, #0
     mov     r0, r4
     movs    r6, #0
     bl      memset
-    mov.w   lr, #60 @ 0x3c
+    mov     lr, #60 @ 0x3c
     mov     ip, r6
-    str.w   r8, [sp, #4]
+    str     r8, [sp, #4]
 bf128_mul_l6:
-    ldr.w   r9, [r4]
+    ldr     r9, [r4]
     ldr     r2, [sp, #12]
     add     r0, sp, #336    @ 0x150
     mov     r1, r4
     rsb     r8, lr, #32
-    sub.w   r7, lr, #32
+    sub     r7, lr, #32
 bf128_mul_l4:
     ldrd    r3, sl, [r0]
-    lsl.w   fp, sl, r8
-    lsr.w   r3, r3, lr
-    lsr.w   sl, sl, r7
-    orr.w   r3, r3, fp
-    orr.w   r3, r3, sl
-    and.w   r3, r3, #15
-    add.w   sl, r5, r3, lsl #4
+    lsl     fp, sl, r8
+    lsr     r3, r3, lr
+    lsr     sl, sl, r7
+    orr     r3, r3, fp
+    orr     r3, r3, sl
+    and     r3, r3, #15
+    add     sl, r5, r3, lsl #4
     lsls    r3, r3, #4
     adds    r0, #8
     ldr     r3, [r5, r3]
-    eor.w   r3, r3, r9
+    eor     r3, r3, r9
     str     r3, [r1, #0]
-    ldr.w   r3, [sl, #4]
+    ldr     r3, [sl, #4]
     eors    r3, r2
     str     r3, [r1, #4]
-    ldr.w   r2, [r1, #8]!
-    ldr.w   r3, [sl, #8]
-    eor.w   r9, r2, r3
+    ldr     r2, [r1, #8]!
+    ldr     r3, [sl, #8]
+    eor     r9, r2, r3
     ldr     r3, [r1, #4]
-    ldr.w   r2, [sl, #12]
-    str.w   r9, [r1]
+    ldr     r2, [sl, #12]
+    str     r9, [r1]
     eors    r2, r3
     add     r3, sp, #352    @ 0x160
     cmp     r3, r0
     str     r2, [r1, #4]
-    bne.n   bf128_mul_l4
-    sub.w   lr, lr, #4
-    cmn.w   lr, #4
-    beq.n   bf128_mul_l5
+    bne     bf128_mul_l4
+    sub     lr, lr, #4
+    cmn     lr, #4
+    beq     bf128_mul_l5
     ldr     r1, [r4, #20]
     ldr     r2, [r4, #12]
-    ldr.w   r8, [r4, #16]
+    ldr     r8, [r4, #16]
     ldr     r3, [r4, #4]
     ldr     r7, [r4, #8]
     lsrs    r0, r1, #28
-    mov.w   ip, ip, lsl #4
+    mov     ip, ip, lsl #4
     lsls    r1, r1, #4
-    orr.w   r1, r1, r8, lsr #28
-    orr.w   ip, ip, r6, lsr #28
-    orr.w   r6, r0, r6, lsl #4
+    orr     r1, r1, r8, lsr #28
+    orr     ip, ip, r6, lsr #28
+    orr     r6, r0, r6, lsl #4
     lsrs    r0, r2, #28
-    orr.w   r0, r0, r8, lsl #4
+    orr     r0, r0, r8, lsl #4
     str     r1, [r4, #20]
     ldr     r1, [r4, #0]
     str     r0, [r4, #16]
     lsls    r2, r2, #4
     lsrs    r0, r3, #28
     lsls    r3, r3, #4
-    orr.w   r3, r3, r1, lsr #28
-    orr.w   r2, r2, r7, lsr #28
-    orr.w   r0, r0, r7, lsl #4
+    orr     r3, r3, r1, lsr #28
+    orr     r2, r2, r7, lsr #28
+    orr     r0, r0, r7, lsl #4
     lsls    r1, r1, #4
     strd    r0, r2, [r4, #8]
     strd    r1, r3, [r4]
-    b.n     bf128_mul_l6
+    b       bf128_mul_l6
 bf128_mul_l5:
     ldr     r5, [sp, #24]
     ldr     r2, [sp, #16]
     ldr     r7, [sp, #20]
     ldr     r0, [sp, #28]
     ldr     r1, [sp, #12]
-    ldr.w   r8, [sp, #4]
-    mov.w   r3, ip, lsr #30
-    eor.w   r3, r3, ip, lsr #31
-    adds.w  lr, r6, r6
-    eor.w   r3, r3, r5
-    eor.w   r2, r2, r6
-    eor.w   r3, r3, ip, lsr #25
+    ldr     r8, [sp, #4]
+    mov     r3, ip, lsr #30
+    eor     r3, r3, ip, lsr #31
+    adds    lr, r6, r6
+    eor     r3, r3, r5
+    eor     r2, r2, r6
+    eor     r3, r3, ip, lsr #25
     ldr     r5, [r4, #0]
-    eor.w   r2, r2, lr
-    eor.w   r4, ip, r7
-    adc.w   lr, ip, ip
-    eor.w   r2, r2, r6, lsl #2
-    adds.w  r9, r3, r3
-    mov.w   r7, ip, lsl #2
-    mov.w   ip, ip, lsl #7
-    orr.w   r7, r7, r6, lsr #30
-    orr.w   ip, ip, r6, lsr #25
-    eor.w   r2, r2, r6, lsl #7
-    eor.w   r5, r5, r3
-    adc.w   r6, r0, r0
+    eor     r2, r2, lr
+    eor     r4, ip, r7
+    adc     lr, ip, ip
+    eor     r2, r2, r6, lsl #2
+    adds    r9, r3, r3
+    mov     r7, ip, lsl #2
+    mov     ip, ip, lsl #7
+    orr     r7, r7, r6, lsr #30
+    orr     ip, ip, r6, lsr #25
+    eor     r2, r2, r6, lsl #7
+    eor     r5, r5, r3
+    adc     r6, r0, r0
     eors    r1, r0
-    eor.w   r4, r4, lr
-    mov.w   lr, r0, lsl #2
-    eor.w   r5, r5, r9
-    eor.w   r2, r2, r0, lsr #31
+    eor     r4, r4, lr
+    mov     lr, r0, lsl #2
+    eor     r5, r5, r9
+    eor     r2, r2, r0, lsr #31
     eors    r1, r6
-    orr.w   lr, lr, r3, lsr #30
+    orr     lr, lr, r3, lsr #30
     lsls    r6, r0, #7
     eors    r4, r7
-    eor.w   r2, r2, r0, lsr #30
-    eor.w   r5, r5, r3, lsl #2
-    eor.w   r1, r1, lr
-    orr.w   r6, r6, r3, lsr #25
-    eor.w   r2, r2, r0, lsr #25
-    eor.w   r4, r4, ip
-    eor.w   r5, r5, r3, lsl #7
+    eor     r2, r2, r0, lsr #30
+    eor     r5, r5, r3, lsl #2
+    eor     r1, r1, lr
+    orr     r6, r6, r3, lsr #25
+    eor     r2, r2, r0, lsr #25
+    eor     r4, r4, ip
+    eor     r5, r5, r3, lsl #7
     eors    r1, r6
     mov     r0, r8
     strd    r5, r1, [r8]
@@ -1016,7 +1016,7 @@ bf128_mul_clear_loop:
     mov     r3, #0
 // END OF CLEAR
     add     sp, #300        @ 0x12c
-    ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     str     r0, [sp]                        // CLEAR
     str     r2, [sp, #4]                    // CLEAR
     add     sp, #8
@@ -1081,7 +1081,7 @@ bf128_add_wrapper:
     mov     r0, #0                        // CLEAR
     mov     r1, r0                        // CLEAR
     mov     r2, r0                        // CLEAR
-    mov     r2, r0                        // CLEAR
+    mov     r3, r0                        // CLEAR
     stmia   sp, {r0, r1, r2, r3}          // CLEAR
     add     sp, #32
     stmdb   sp, {r0, r1, r2, r3}          // CLEAR
@@ -1116,7 +1116,7 @@ bf128_mul_wrapper:
     mov     r0, #0                        // CLEAR
     mov     r1, r0                        // CLEAR
     mov     r2, r0                        // CLEAR
-    mov     r2, r0                        // CLEAR
+    mov     r3, r0                        // CLEAR
     strd    r6, r7, [sp]                  // CLEAR
     strd    r6, r7, [sp, #8]              // CLEAR
     strd    r6, r7, [sp, #16]             // CLEAR

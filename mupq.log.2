@@ -1,6 +1,15 @@
-2024-08-28 09:31:00,905 BoardTestCase INFO: Runnning faest_128f - ref - test
-2024-08-28 09:31:00,905 Implementation INFO: Building faest_128f - ref - test
-2024-08-28 09:31:01,138 Implementation DEBUG: make stdout output:
-OBJCOPY bin/crypto_sign_faest_128f_ref_test.bin
-2024-08-28 09:31:09,641 Platform DEBUG: Found start pattern: b'=========================\n'
-2024-08-28 09:32:22,023 BoardTestCase INFO: Test faest_128f - ref - test Successful
+2024-10-08 16:09:02,340 BoardTestCase INFO: Running faest_128f_masked - ref on host
+2024-10-08 16:09:02,634 Implementation DEBUG: make stdout output:
+make: 'bin-host/crypto_sign_faest_128f_masked_ref_testvectors' is up to date.
+2024-10-08 16:09:03,435 BoardTestCase INFO: Runnning faest_128f_masked - ref - testvectors
+2024-10-08 16:09:03,435 Implementation INFO: Building faest_128f_masked - ref - testvectors
+2024-10-08 16:09:03,730 Implementation DEBUG: make stdout output:
+make: 'bin/crypto_sign_faest_128f_masked_ref_testvectors.hex' is up to date.
+2024-10-08 16:09:09,454 Platform DEBUG: Found start pattern: b'=========================\n'
+2024-10-08 16:11:03,224 BoardTestCase INFO: Test faest_128f_masked - ref - testvectors Successful
+2024-10-08 16:11:03,224 BoardTestCase INFO: Runnning faest_128f_masked - m4 - testvectors
+2024-10-08 16:11:03,224 Implementation INFO: Building faest_128f_masked - m4 - testvectors
+2024-10-08 16:11:03,526 Implementation DEBUG: make stdout output:
+OBJCOPY bin/crypto_sign_faest_128f_masked_m4_testvectors.hex
+2024-10-08 16:11:09,144 Platform DEBUG: Found start pattern: b'=========================\n'
+2024-10-08 16:13:04,667 BoardTestCase INFO: Test faest_128f_masked - m4 - testvectors Successful
