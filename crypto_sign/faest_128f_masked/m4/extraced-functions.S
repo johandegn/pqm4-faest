@@ -1,6 +1,5 @@
 .syntax unified
 .thumb
-.global compute_sbox_masked
 
 .align 8
 .macro clear_stack, size, label
@@ -15,6 +14,7 @@
     mov     r3, #0
 .endm
 
+.global compute_sbox_masked
 compute_sbox_masked:
     push    {r4, r5, r6, lr}
     sub     sp, #4
@@ -357,60 +357,6 @@ bf8_mul:
     str     r1, [sp, #8]
     add     sp, #12
     ldr     pc, [sp], #4
-
-
-.global bf8_inv_masked
-bf8_inv_masked:
-    stmdb   sp!, {r4, r5, r6, r7, r8, lr}
-    sub     sp, #8
-    mov     r6, r2
-    mov     r5, r3
-    mov     r8, r0
-    mov     r7, r1
-    bl      bf64_rand
-    ldr     r3, =0x80808081
-    adds    r4, r0, r1
-    adc     r4, r4, #0
-    umull   r3, ip, r3, r4
-    mov     ip, ip, lsr #7
-    rsb     ip, ip, ip, lsl #8
-    sub     r4, r4, ip
-    adds    r4, #1
-    uxtb    r4, r4
-    ldrb    r0, [r8]
-    mov     r1, r4
-    bl      bf8_mul
-    ldrb    r1, [r7, #0]
-    mov     r8, r0
-    mov     r0, r4
-    bl      bf8_mul
-    eor     r0, r8, r0
-    uxtb    r0, r0
-    bl      bf8_inv
-    movs    r3, #0
-    mov     r7, r0
-    movs    r1, #1
-    add     r0, sp, #7
-    strb    r3, [sp, #7]
-    bl      rand_mask
-    ldrb    r8, [sp, #7]
-    eor     r0, r8, r7
-    mov     r1, r4
-    uxtb    r0, r0
-    bl      bf8_mul
-    mov     r1, r8
-    strb    r6, [r6, #0]                // CLEAR
-    strb    r0, [r6, #0]
-    mov     r0, r4
-    bl      bf8_mul
-    strb    r5, [r5, #0]                // CLEAR
-    strb    r0, [r5, #0]
-    // CLEAR STACK
-    mov     r1, #0
-    str     r1, [sp]
-    str     r1, [sp, #4]
-    add     sp, #8
-    ldmia   sp!, {r4, r5, r6, r7, r8, pc}
 
 
 .global expand_128key_masked
@@ -1952,3 +1898,56 @@ aes_enc_forward_backward_128_l11:
     add     sp, sp, #772    @ 0x304
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
+
+.global bf8_inv_masked
+bf8_inv_masked:
+    stmdb   sp!, {r4, r5, r6, r7, r8, lr}
+    sub     sp, #8
+    mov     r6, r2
+    mov     r5, r3
+    mov     r8, r0
+    mov     r7, r1
+    bl      bf64_rand
+    ldr     r3, =0x80808081
+    adds    r4, r0, r1
+    adc     r4, r4, #0
+    umull   r3, ip, r3, r4
+    mov     ip, ip, lsr #7
+    rsb     ip, ip, ip, lsl #8
+    sub     r4, r4, ip
+    adds    r4, #1
+    uxtb    r4, r4
+    ldrb    r0, [r8]
+    mov     r1, r4
+    bl      bf8_mul
+    ldrb    r1, [r7, #0]
+    mov     r8, r0
+    mov     r0, r4
+    bl      bf8_mul
+    eor     r0, r8, r0
+    uxtb    r0, r0
+    bl      bf8_inv
+    movs    r3, #0
+    mov     r7, r0
+    movs    r1, #1
+    add     r0, sp, #7
+    strb    r3, [sp, #7]
+    bl      rand_mask
+    ldrb    r8, [sp, #7]
+    eor     r0, r8, r7
+    mov     r1, r4
+    uxtb    r0, r0
+    bl      bf8_mul
+    mov     r1, r8
+    strb    r6, [r6, #0]                // CLEAR
+    strb    r0, [r6, #0]
+    mov     r0, r4
+    bl      bf8_mul
+    strb    r5, [r5, #0]                // CLEAR
+    strb    r0, [r5, #0]
+    // CLEAR STACK
+    mov     r1, #0
+    str     r1, [sp]
+    str     r1, [sp, #4]
+    add     sp, #8
+    ldmia   sp!, {r4, r5, r6, r7, r8, pc}
