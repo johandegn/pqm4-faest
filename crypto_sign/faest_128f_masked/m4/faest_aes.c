@@ -1256,7 +1256,10 @@ static void aes_enc_backward_128_1_round(const uint8_t* x, const uint8_t* xk, co
   }
 }
 
-static void aes_enc_forward_backward_128(vbb_t* vbb, unsigned int offset, const uint8_t* in, const uint8_t* out,
+void aes_enc_forward_backward_128(vbb_t* vbb, unsigned int offset, const uint8_t* in, const uint8_t* out,
+                                         bf128_t* vs, bf128_t* vs_old, bf128_t* vs_dash, unsigned int round, unsigned int share);
+/*
+void aes_enc_forward_backward_128(vbb_t* vbb, unsigned int offset, const uint8_t* in, const uint8_t* out,
                                          bf128_t* vs, bf128_t* vs_old, bf128_t* vs_dash, unsigned int round, unsigned int share) {
   const uint8_t Mkey = 0;
   const uint8_t Mtag = 1;
@@ -1370,7 +1373,7 @@ static void aes_enc_forward_backward_128(vbb_t* vbb, unsigned int offset, const 
     vs_old[iy + 3] = bf128_add(vs_old[iy + 3], bf128_mul(bf_x_hat[3], bf_two));
   }
 }
-
+*/
 
 static void aes_enc_constraints_128_masked(const uint8_t* in_share, const uint8_t* out_share, const uint8_t* w_share,
                                            vbb_t* vbb, unsigned int offset, const uint8_t* k_share,
