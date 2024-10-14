@@ -1028,12 +1028,7 @@ bf128_mul_wrapper:
     mov     r1, r0                        // CLEAR
     mov     r2, r0                        // CLEAR
     mov     r3, r0                        // CLEAR
-    strd    r6, r7, [sp]                  // CLEAR
-    strd    r6, r7, [sp, #8]              // CLEAR
-    strd    r6, r7, [sp, #16]             // CLEAR
-    strd    r6, r7, [sp, #24]             // CLEAR
-    strd    r6, r7, [sp, #32]             // CLEAR
-    str     r6, [sp, #40]                 // CLEAR
+    clear_stack 44 bf128_mul_wrapper_clear_loop
     add     sp, #44 @ 0x2c
     pop     {r4, r5, r6, r7, pc}
 
