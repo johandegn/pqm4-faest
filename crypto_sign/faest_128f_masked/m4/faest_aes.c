@@ -450,7 +450,7 @@ static void __attribute__ ((noinline)) aes_key_schedule_128_masked(const uint8_t
       bf128_add_wrapper(&share_1, &share_1, &tmp_1);
       tmp_x = bf128_one();
       bf128_add_wrapper(&share_1, &share_1, &tmp_x);
-      zk_hash_128_update(a1_ctx+ 1, share_1); 
+      zk_hash_128_update(a1_ctx + 1, share_1); 
     }
     iwd += 128 / 8;
   }
@@ -959,7 +959,7 @@ static void aes_prove_128_masked(const uint8_t* w_share, vbb_t* vbb, const uint8
 
   zk_hash_128_finalize(a_tilde_share[0], &a1_ctx_share[0], bf128_load(get_vole_u_share(vbb, 0) + FAEST_128F_L / 8));
   zk_hash_128_finalize(b_tilde_share[0], &a0_ctx_share[0], bf128_sum_poly_vbb_share(vbb, FAEST_128F_L, 0));
-
+  // NOTE: LEAKS u in stack argument to zk_hash_128_finalize (TVLA cannot see since random)
   zk_hash_128_finalize(a_tilde_share[1], &a1_ctx_share[1], bf128_load(get_vole_u_share(vbb, 1) + FAEST_128F_L / 8));
   zk_hash_128_finalize(b_tilde_share[1], &a0_ctx_share[1], bf128_sum_poly_vbb_share(vbb, FAEST_128F_L, 1));
 

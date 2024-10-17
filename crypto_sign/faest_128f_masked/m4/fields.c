@@ -249,6 +249,7 @@ bf128_t bf128_byte_combine_vbb_share(vbb_t* vbb, unsigned int offset, int share)
   return bf_out;
 }
 
+/*
 bf128_t bf128_byte_combine_bits(uint8_t x) {
 #if defined(HAVE_ATTR_VECTOR_SIZE)
   return bf128_from_bit(x & 1) ^ bf128_mul_bit(bf128_alpha[1 - 1], (x >> 1) & 1) ^
@@ -261,11 +262,12 @@ bf128_t bf128_byte_combine_bits(uint8_t x) {
 #else
   bf128_t bf_out = bf128_from_bit(x & 1);
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul_bit(bf128_alpha[i - 1], (x >> i) & 1));
+    bf_out = bf128_add(bf_out, bf128_mul_bit(bf128_alpha_wrapper(i - 1), (x >> i) & 1));
   }
   return bf_out;
 #endif
 }
+*/
 
 bf128_t bf128_rand(void) {
   uint8_t buf[BF128_NUM_BYTES];
@@ -411,11 +413,13 @@ bf128_t bf128_mul_64(bf128_t lhs, bf64_t rhs) {
   return bf128_mul(lhs, (bf128_t){{rhs, 0}});
 }
 
+/*
 #if !defined(HAVE_ATTR_VECTOR_SIZE)
 bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs) {
   return bf128_and_64(lhs, -((uint64_t)rhs & 1));
 }
 #endif
+*/
 
 ATTR_CONST static inline bf128_t bf128_dbl(bf128_t lhs) {
   uint64_t mask = bf128_bit_to_uint64_mask(lhs, 128 - 1);
@@ -440,7 +444,8 @@ bf128_t bf128_sum_poly_vbb(vbb_t* vbb, unsigned int offset) {
   }
   return ret;
 }
-
+bf128_t bf128_sum_poly_vbb_share(vbb_t* vbb, unsigned int offset, int share);
+/*
 bf128_t bf128_sum_poly_vbb_share(vbb_t* vbb, unsigned int offset, int share) {
   bf128_t ret = *get_vole_aes_128_share(vbb, offset + 128 - 1, share);
   for (size_t i = 1; i < 128; ++i) {
@@ -448,6 +453,7 @@ bf128_t bf128_sum_poly_vbb_share(vbb_t* vbb, unsigned int offset, int share) {
   }
   return ret;
 }
+*/
 
 // GF(2^192) implementation
 

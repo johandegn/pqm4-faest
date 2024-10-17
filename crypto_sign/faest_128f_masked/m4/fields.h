@@ -215,11 +215,14 @@ bf128_t bf128_mul(bf128_t lhs, bf128_t rhs);
 void bf128_mul_wrapper(bf128_t *out, const bf128_t *lhs, const bf128_t *rhs);
 void bf128_add_wrapper(bf128_t *out, const bf128_t *lhs, const bf128_t *rhs);
 ATTR_CONST bf128_t bf128_mul_64(bf128_t lhs, bf64_t rhs);
+/*
 #if defined(HAVE_ATTR_VECTOR_SIZE)
 #define bf128_mul_bit(lhs, rhs) ((lhs) & -((uint64_t)(rhs)&1))
 #else
 ATTR_CONST bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs);
 #endif
+*/
+ATTR_CONST bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs);
 ATTR_PURE bf128_t bf128_sum_poly(const bf128_t* xs);
 
 // GF(2^192) implemenation

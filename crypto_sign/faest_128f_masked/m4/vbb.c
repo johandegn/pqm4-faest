@@ -534,11 +534,11 @@ static void setup_vk_cache(vbb_t* vbb) {
 }
 
 static inline uint8_t* get_vk(vbb_t* vbb, unsigned int idx) {
-  assert(idx < vbb->params->faest_param.Lke);
   unsigned int offset = idx * (vbb->params->faest_param.lambda / 8);
   return (vbb->vk_cache + offset);
 }
 
+/*
 const bf128_t* get_vk_128(vbb_t* vbb, unsigned int idx) {
   if (idx < FAEST_128F_LAMBDA) {
     const bf128_t* vk = (bf128_t*)get_vk(vbb, idx);
@@ -568,6 +568,7 @@ const bf128_t* get_vk_128(vbb_t* vbb, unsigned int idx) {
   memcpy(vbb->vk_buf, &vk, sizeof(bf128_t));
   return (bf128_t*)vbb->vk_buf;
 }
+*/
 
 const bf192_t* get_vk_192(vbb_t* vbb, unsigned int idx) {
   if (idx < FAEST_192F_LAMBDA) {

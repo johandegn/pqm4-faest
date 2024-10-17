@@ -14,6 +14,7 @@
     mov     r3, #0
 .endm
 
+
 .global compute_sbox_masked
 compute_sbox_masked:
     push    {r4, r5, r6, lr}
@@ -171,6 +172,7 @@ sr_loop2:
     str     r0, [ip, #4]!
     bcc     sr_loop2
     b       sr_rexit
+
 
 .global mix_column
 mix_column:
@@ -1135,6 +1137,82 @@ bf128_byte_combine_vk_share_loop:
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
 
+.global bf128_mul_bit
+bf128_mul_bit:
+    sub     sp, #8
+    push    {r4}
+    add     r1, sp, #4
+    stmia   r1, {r2, r3}
+    ldrb    r1, [sp, #20]
+    ldr     r4, [sp, #8]
+    sbfx    ip, r1, #0, #1
+    and     r2, r2, ip
+    str     r2, [r0, #0]
+    ldr     r2, [sp, #12]
+    mov     r1, ip
+    and     r2, ip, r2
+    ands    r1, r4
+    ldr     r4, [sp, #16]
+    str     r2, [r0, #8]
+    mov     r2, ip
+    ands    r2, r4
+    pop     {r4}
+    str     r1, [r0, #4]
+    str     r2, [r0, #12]
+    // CLEAR STACK AND REGS
+    mov     r0, #0
+    mov     r1, r0
+    mov     r2, r0
+    mov     r3, r0
+    strd    r0, r1, [sp]
+    add     sp, #8
+    bx      lr
+
+
+.global bf128_byte_combine_bits
+bf128_byte_combine_bits:
+    stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+    sub     sp, #60 @ 0x3c
+    movs    r6, #0
+    mov     fp, r1
+    str     r0, [sp, #20]
+    and     r9, r1, #1
+    mov     r8, r6
+    mov     r7, r6
+    movs    r4, #1
+    add     r5, sp, #24
+    add     sl, sp, #32
+ bf128_byte_combine_bits_l:
+    subs    r1, r4, #1
+    mov     r0, r5
+    bl      bf128_alpha_wrapper
+    asr     r3, fp, r4
+    and     r3, r3, #1
+    str     r3, [sp, #8]
+    ldmia   sl, {r0, r1}
+    stmia   sp, {r0, r1}
+    add     r0, sp, #40     @ 0x28
+    ldmia   r5, {r2, r3}
+    bl      bf128_mul_bit
+    ldrd    r2, r3, [sp, #40]       @ 0x28
+    adds    r4, #1
+    eor     r9, r9, r2
+    eors    r6, r3
+    ldr     r2, [sp, #48]   @ 0x30
+    ldr     r3, [sp, #52]   @ 0x34
+    cmp     r4, #8
+    eor     r8, r8, r2
+    eor     r7, r7, r3
+    bne     bf128_byte_combine_bits_l
+    ldr     r3, [sp, #20]
+    mov     r0, r3
+    strd    r9, r6, [r3]
+    strd    r8, r7, [r3, #8]
+    clear_stack 60 bf128_byte_combine_bits_clear_loop
+    add     sp, #60 @ 0x3c
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+
+
 .global aes_enc_forward_backward_128
 aes_enc_forward_backward_128:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -1884,6 +1962,140 @@ aes_enc_forward_backward_128_l11:
     add     sp, sp, #772    @ 0x304
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
+.global get_vk_128
+get_vk_128:
+    push    {r4, r5, r6, lr}
+    cmp     r1, #127        @ 0x7f
+    sub     sp, #48 @ 0x30
+    mov     r4, r1
+    mov     r5, r0
+    bls     vk_128_l1
+    tst     r1, #96 @ 0x60
+    beq     vk_128_l2
+    subs    r1, #128        @ 0x80
+    bl      get_vk_128
+    ldmia   r0, {r0, r1, r2, r3}
+    stmia   sp, {r0, r1, r2, r3}
+    sub     r1, r4, #32
+    mov     r0, r5
+    bl      get_vk_128
+    ldmia   r0, {r0, r1, r2, r3}
+    add     r4, sp, #16
+    stmia   r4, {r0, r1, r2, r3}
+    ldrd    r4, r0, [sp, #8]
+    eors    r2, r4
+    str     r2, [sp, #40]   @ 0x28
+    ldr     r2, [sp, #28]
+    ldr     r6, [r5, #56]   @ 0x38
+    ldrd    r1, r3, [sp]
+    eors    r2, r0
+    str     r2, [sp, #44]   @ 0x2c
+    ldr     r2, [sp, #16]
+    eors    r2, r1
+    ldr     r1, [sp, #20]
+    str     r2, [sp, #32]
+    eors    r3, r1
+    str     r3, [sp, #36]   @ 0x24
+    add     r4, sp, #32
+    ldmia   r4!, {r0, r1, r2, r3}
+    str     r0, [r6, #0]
+    str     r1, [r6, #4]
+    str     r2, [r6, #8]
+    str     r3, [r6, #12]
+    ldr     r0, [r5, #56]   @ 0x38
+    add     sp, #48 @ 0x30
+    pop     {r4, r5, r6, pc}
+vk_128_l2:
+    ldr     r2, [r0, #32]
+    ldr     r0, [r0, #60]   @ 0x3c
+    ldrh    r2, [r2, #0]
+    and     r3, r1, #127    @ 0x7f
+    lsrs    r4, r1, #7
+    adds    r3, #96 @ 0x60
+    lsrs    r2, r2, #3
+    add     r3, r3, r4, lsl #5
+    mul     r3, r2, r3
+    ldr     r2, [r5, #56]   @ 0x38
+    adds    r1, r0, r3
+vk_128_l3:
+    ldr     r4, [r0, r3]
+    ldr     r0, [r1, #4]
+    ldr     r3, [r1, #8]
+    ldr     r1, [r1, #12]
+    str     r1, [r2, #12]
+    str     r4, [r2, #0]
+    str     r0, [r2, #4]
+    str     r3, [r2, #8]
+    ldr     r0, [r5, #56]   @ 0x38
+    mov     r4, r0
+    clear_stack 48 get_vk_128_clear_loop
+    mov     r0, r4
+    add     sp, #48 @ 0x30
+    pop     {r4, r5, r6, pc}
+vk_128_l1:
+    ldr     r3, [r0, #32]
+    ldr     r0, [r0, #60]   @ 0x3c
+    ldrh    r3, [r3, #0]
+    ldr     r2, [r5, #56]   @ 0x38
+    lsrs    r3, r3, #3
+    mul     r3, r1, r3
+    adds    r1, r0, r3
+    b       vk_128_l3
+
+.global bf128_sum_poly_vbb_share
+bf128_sum_poly_vbb_share:
+    stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
+    sub     sp, #12
+    mov     r4, r1
+    mov     r8, r2
+    str     r1, [sp, #0]
+    mov     r2, r3
+    mov     fp, r0
+    add     r1, r8, #127    @ 0x7f
+    mov     r0, r4
+    mov     sl, r3
+    bl      get_vole_aes_128_share
+    ldrd    r4, r6, [r0]
+    ldrd    r3, r5, [r0, #8]
+    add     r7, r8, #126    @ 0x7e
+    str     fp, [sp, #4]
+bf128_sum_poly_vbb_share_loop:
+    adds    r3, r3, r3
+    mov     r1, r7
+    ldr     r0, [sp, #0]
+    mov     r2, sl
+    adc     fp, r5, r5
+    orr     r9, r3, r6, lsr #31
+    bl      get_vole_aes_128_share
+    ldr     r3, [r0, #0]
+    ldr     r1, [r0, #4]
+    adds    r4, r4, r4
+    eor     r4, r4, r3
+    mov     r5, r5, asr #31
+    ldr     r3, [r0, #8]
+    ldr     r0, [r0, #12]
+    adcs    r6, r6
+    and     r5, r5, #135    @ 0x87
+    cmp     r8, r7
+    eor     r4, r4, r5
+    eor     r3, r9, r3
+    eor     r6, r6, r1
+    eor     r5, fp, r0
+    add     r7, r7, #4294967295     @ 0xffffffff
+    bne     bf128_sum_poly_vbb_share_loop
+    ldr     fp, [sp, #4]
+    mov     r0, fp
+    strd    r4, r6, [fp]
+    strd    r3, r5, [fp, #8]
+    mov     r0, #0                      // CLEAR
+    mov     r1, #0                      // CLEAR
+    mov     r2, r1                      // CLEAR
+    mov     r3, r1                      // CLEAR
+    str     r1, [sp, #0]                // CLEAR
+    str     r1, [sp, #4]                // CLEAR
+    str     r1, [sp, #8]                // CLEAR
+    add     sp, #12
+    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
 .global bf8_inv_masked
 bf8_inv_masked:
