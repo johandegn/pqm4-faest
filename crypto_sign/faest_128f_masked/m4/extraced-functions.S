@@ -1962,6 +1962,7 @@ aes_enc_forward_backward_128_l11:
     add     sp, sp, #772    @ 0x304
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
+
 .global get_vk_128
 get_vk_128:
     push    {r4, r5, r6, lr}
@@ -2042,6 +2043,7 @@ vk_128_l1:
     adds    r1, r0, r3
     b       vk_128_l3
 
+
 .global bf128_sum_poly_vbb_share
 bf128_sum_poly_vbb_share:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -2096,6 +2098,33 @@ bf128_sum_poly_vbb_share_loop:
     str     r1, [sp, #8]                // CLEAR
     add     sp, #12
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+
+
+.global xor_u8_array_wrapper
+xor_u8_array_wrapper:
+    cbz     r3, xor_u8_array_wrapper_exit
+    push    {lr}
+    subs    r3, #1
+    add     ip, r0, #4294967295     @ 0xffffffff
+    subs    r1, #1
+    subs    r2, #1
+    add     r0, r3
+xor_u8_array_wrapper_loop:
+    ldrb    r3, [ip, #1]!
+    ldrb    lr, [r1, #1]!
+    cmp     ip, r0
+    eor     r3, r3, lr
+    strb    r3, [r2, #1]!
+    bne     xor_u8_array_wrapper_loop
+    mov     r0, #0                      // CLEAR
+    mov     r1, #0                      // CLEAR
+    mov     r2, #0                      // CLEAR
+    mov     r3, #0                      // CLEAR
+    mov     lr, #0                      // CLEAR
+    ldr     pc, [sp], #4
+xor_u8_array_wrapper_exit:
+    bx      lr
+
 
 .global bf8_inv_masked
 bf8_inv_masked:

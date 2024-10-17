@@ -307,7 +307,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
       rand_mask(&owf_output_share[0][i], 1);
       owf_output_share[1][i] = owf_output[i] ^ owf_output_share[0][i];
     }
-    H3_init(&h3_ctx, lambda);
+    H3_init(&h3_ctx, lambda); // NOTE: first time init is run after flash/board reset, it used ~200 cycles more
     H3_update(&h3_ctx, owf_key_shares, lambdaBytes);
     H3_update(&h3_ctx, mu_shares, lambdaBytes * 2);
     if (rho && rholen) {
@@ -364,8 +364,8 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
 
   // secret sharing the input, (Not needed only to remove false positive leakage)
   w_share = aes_extend_witness_masked(&key_share[0][0], &owf_input_share[0][0], params, w_share);
-  xor_u8_array(w_share, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
-  xor_u8_array(w_share + (l + 7) / 8, signature_d(sig, params), signature_d(sig, params),
+  xor_u8_array_wrapper(w_share, get_vole_u(&vbb), signature_d(sig, params), ell_bytes);
+  xor_u8_array_wrapper(w_share + (l + 7) / 8, signature_d(sig, params), signature_d(sig, params),
                ell_bytes);
 #else
   uint8_t* w = alloca((l + 7) / 8);
