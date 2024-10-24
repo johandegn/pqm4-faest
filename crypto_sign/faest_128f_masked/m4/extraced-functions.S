@@ -1,6 +1,24 @@
 .syntax unified
 .thumb
 
+.global aes_increment_iv
+aes_increment_iv:
+    add     r2, r0, #16
+    movs    r1, #1
+aes_increment_iv_l:
+    ldr     r3, [r2, #-4]!
+    rev     r3, r3
+    adds    r3, r1
+    ite     ne
+    movne   r1, #0
+    moveq   r1, #1
+    cmp     r0, r2
+    rev     r3, r3
+    str     r3, [r2, #0]
+    bne     aes_increment_iv_l
+    bx      lr
+
+
 .align 8
 .macro clear_stack, size, label
     mov     r1, #\size
