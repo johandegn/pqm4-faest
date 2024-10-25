@@ -307,7 +307,6 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
       rand_mask(&owf_output_share[0][i], 1);
       owf_output_share[1][i] = owf_output[i] ^ owf_output_share[0][i];
     }
-
     H3_init(&h3_ctx, lambda);
     H3_update(&h3_ctx, owf_key_shares, lambdaBytes);
     H3_update(&h3_ctx, mu_shares, lambdaBytes * 2);
@@ -339,55 +338,9 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
   }
   init_stack_allocations_sign(&vbb, hcom, u, v_cache, v_buf, vk_buf, vk_cache);
   init_vbb_sign(&vbb, len, rootkey, signature_iv(sig, params), signature_c(sig, 0, params), params);
-
   uint8_t chall_1[(5 * MAX_LAMBDA_BYTES) + 8];
   hash_challenge_1(chall_1, mu, get_com_hash(&vbb), signature_c(sig, 0, params),
                    signature_iv(sig, params), lambda, l, tau);
-
-#define WITNESS_MASKING
-#ifdef WITNESS_MASKING
-  uint8_t* vk_mask = alloca(params->faest_param.Lke * lambdaBytes);
-  uint8_t* v_mask = alloca(ell_hat * lambdaBytes);
-  uint8_t* u_mask = alloca(ell_hat/8);
-  setup_mask_storage(&vbb, vk_mask, v_mask, u_mask);
-  uint8_t h_v[MAX_LAMBDA_BYTES * 2];
-
-  if (params->faest_paramid == 1 || params->faest_paramid == 2){
-    uint8_t u_tilde_buf[2][MAX_LAMBDA_BYTES + UNIVERSAL_HASH_B];
-    vole_hash(u_tilde_buf[0], chall_1, get_vole_u_share(&vbb, 0), l, lambda);
-    vole_hash(u_tilde_buf[1], chall_1, get_vole_u_share(&vbb, 1), l, lambda);
-    xor_u8_array(u_tilde_buf[0], u_tilde_buf[1], signature_u_tilde(sig, params), lambdaBytes + UNIVERSAL_HASH_B);
-
-    prepare_hash_sign(&vbb);
-    H1_context_t h1_ctx_1;
-    H1_init(&h1_ctx_1, lambda);
-
-    uint8_t V_tilde[2][MAX_LAMBDA_BYTES + UNIVERSAL_HASH_B];
-    for (unsigned int i = 0; i != lambda; ++i) {
-      vole_hash(V_tilde[0], chall_1, get_vole_v_hash_share(&vbb, i, 0), l, lambda);
-      vole_hash(V_tilde[1], chall_1, get_vole_v_hash_share(&vbb, i, 1), l, lambda);
-      xor_u8_array(V_tilde[0], V_tilde[1], V_tilde[0], lambdaBytes + UNIVERSAL_HASH_B);
-      H1_update(&h1_ctx_1, V_tilde[0], lambdaBytes + UNIVERSAL_HASH_B);
-    }
-    H1_final(&h1_ctx_1, h_v, lambdaBytes * 2);
-  }else{
-    reconstruct_vole(&vbb);
-    vole_hash(signature_u_tilde(sig, params), chall_1, get_vole_u(&vbb), l, lambda);
-
-    prepare_hash_sign(&vbb);
-    {
-      H1_context_t h1_ctx_1;
-      H1_init(&h1_ctx_1, lambda);
-
-      uint8_t V_tilde[MAX_LAMBDA_BYTES + UNIVERSAL_HASH_B];
-      for (unsigned int i = 0; i != lambda; ++i) {
-        vole_hash(V_tilde, chall_1, get_vole_v_hash(&vbb, i), l, lambda);
-        H1_update(&h1_ctx_1, V_tilde, lambdaBytes + UNIVERSAL_HASH_B);
-      }
-      H1_final(&h1_ctx_1, h_v, lambdaBytes * 2);
-    }
-  }
-#else
   vole_hash(signature_u_tilde(sig, params), chall_1, get_vole_u(&vbb), l, lambda);
 
   prepare_hash_sign(&vbb);
@@ -403,20 +356,23 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
     }
     H1_final(&h1_ctx_1, h_v, lambdaBytes * 2);
   }
-#endif
 
-
+#define WITNESS_MASKING
 #ifdef WITNESS_MASKING
+  uint8_t* vk_mask = alloca(params->faest_param.Lke * lambdaBytes);
+  uint8_t* v_mask = alloca(ell_hat * lambdaBytes);
+  uint8_t* u_mask = alloca(ell_hat/8);
+  setup_mask_storage(&vbb, vk_mask, v_mask, u_mask);
+
   // secret sharing the key and then computing the extended witness
   uint8_t* w_share = alloca(2 * (l + 7) / 8);
 
   // secret sharing the input, (Not needed only to remove false positive leakage)
-
   w_share = aes_extend_witness_masked(&key_share[0][0], &owf_input_share[0][0], params, w_share);
-  xor_u8_array(w_share, get_vole_u_share(&vbb, 0), signature_d(sig, params), ell_bytes);
+  xor_u8_array_wrapper(w_share, get_vole_u_share(&vbb, 0), signature_d(sig, params), ell_bytes);
   if (params->faest_paramid == 1 || params->faest_paramid == 2){
-    xor_u8_array(signature_d(sig, params), get_vole_u_share(&vbb, 1), signature_d(sig, params), ell_bytes);
-    xor_u8_array(signature_d(sig, params), w_share + (l + 7) / 8, signature_d(sig, params), ell_bytes);
+    xor_u8_array_wrapper(signature_d(sig, params), get_vole_u_share(&vbb, 1), signature_d(sig, params), ell_bytes);
+    xor_u8_array_wrapper(signature_d(sig, params), w_share + (l + 7) / 8, signature_d(sig, params), ell_bytes);
   } else {
     xor_u8_array(w_share + (l + 7) / 8, signature_d(sig, params), signature_d(sig, params),
                  ell_bytes);

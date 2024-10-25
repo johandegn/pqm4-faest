@@ -545,7 +545,6 @@ static void setup_vk_cache(vbb_t* vbb) {
 }
 
 static inline uint8_t* get_vk(vbb_t* vbb, unsigned int idx) {
-  assert(idx < vbb->params->faest_param.Lke);
   unsigned int offset = idx * (vbb->params->faest_param.lambda / 8);
   return (vbb->vk_cache + offset);
 }
@@ -693,20 +692,6 @@ void reconstruct_vole(vbb_t* vbb) {
   }
   for (unsigned int i = 0; i < ellhat / 8; i++) {
     vbb->vole_U[i] ^= vbb->u_mask_cache[i];
-  }
-}
-
-const uint8_t* get_vole_v_hash_share(vbb_t* vbb, unsigned int idx, unsigned int share){
-  if (share == 1){
-    const unsigned int lambda        = vbb->params->faest_param.lambda;
-    const unsigned int ell           = vbb->params->faest_param.l;
-    const unsigned int ell_hat       = ell + lambda * 2 + UNIVERSAL_HASH_B_BITS;
-    const unsigned int ell_hat_bytes = (ell_hat + 7) / 8;
-    const unsigned int offset = idx - vbb->cache_idx;
-
-    return vbb->v_mask_cache + offset * ell_hat_bytes;
-  }else{
-    return get_vole_v_hash(vbb, idx);
   }
 }
 
