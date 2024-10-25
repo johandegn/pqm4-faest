@@ -3,20 +3,34 @@
 
 .global aes_increment_iv
 aes_increment_iv:
-    add     r2, r0, #16
-    movs    r1, #1
-aes_increment_iv_l:
-    ldr     r3, [r2, #-4]!
+    push    {r4, lr}
+    add     r4, r0, #16
+    ldr     r0, [r4, #-4]!
+    ldr     r1, [r4, #-4]!
+    ldr     r2, [r4, #-4]!
+    ldr     r3, [r4, #-4]!
+    
+    rev     r0, r0
+    adds    r0, r0, #1
+    rev     r0, r0
+    
+    rev     r1, r1    
+    adcs    r1, r1, #0
+    rev     r1, r1    
+    
+    rev     r2, r2
+    adcs    r2, r2, #0
+    rev     r2, r2
+
     rev     r3, r3
-    adds    r3, r1
-    ite     ne
-    movne   r1, #0
-    moveq   r1, #1
-    cmp     r0, r2
+    adcs    r3, r3, #0
     rev     r3, r3
-    str     r3, [r2, #0]
-    bne     aes_increment_iv_l
-    bx      lr
+    
+    str     r3, [r4], #4
+    str     r2, [r4], #4
+    str     r1, [r4], #4
+    str     r0, [r4]
+    pop     {r4, pc}
 
 
 .align 8

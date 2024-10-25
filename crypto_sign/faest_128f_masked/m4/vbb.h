@@ -75,10 +75,16 @@ const bf128_t* get_vk_128(vbb_t* vbb, unsigned int idx);
 const bf192_t* get_vk_192(vbb_t* vbb, unsigned int idx);
 const bf256_t* get_vk_256(vbb_t* vbb, unsigned int idx);
 
+void add_vole_to_vk_cache(vbb_t* vbb, unsigned int idx, bf128_t* vole);
+void add_vole_to_vk_cache_192(vbb_t* vbb, unsigned int idx, bf192_t* vole);
+void add_vole_to_vk_cache_256(vbb_t* vbb, unsigned int idx, bf256_t* vole);
+
 // Masked
 void setup_mask_storage(vbb_t* vbb, uint8_t* vk_mask, uint8_t* v_mask, uint8_t* u_mask);
 void reconstruct_vole(vbb_t* vbb);
 const bf128_t* get_vole_aes_128_share(vbb_t* vbb, unsigned int idx, unsigned int share);
+const uint8_t* get_vole_v_hash_share(vbb_t* vbb, unsigned int idx, unsigned int share);
+void prepare_aes_sign_share(vbb_t* vbb);
 const bf128_t* get_vk_128_share(vbb_t* vbb, unsigned int idx, unsigned int share);
 const uint8_t* get_vole_u_share(vbb_t* vbb, unsigned int share);
 
