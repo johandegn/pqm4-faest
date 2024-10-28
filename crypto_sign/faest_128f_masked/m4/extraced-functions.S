@@ -1,6 +1,16 @@
 .syntax unified
 .thumb
 
+.macro clear_stack, n
+    mov     r1, #0
+    .set    offset, 0
+    .rept   (\n/4)
+    str     r1, [sp, #offset]
+    .set    offset, offset+4
+    .endr
+.endm
+
+
 .global aes_increment_iv
 aes_increment_iv:
     push    {r4, lr}
@@ -31,20 +41,6 @@ aes_increment_iv:
     str     r1, [r4], #4
     str     r0, [r4]
     pop     {r4, pc}
-
-
-.align 8
-.macro clear_stack, size, label
-    mov     r1, #\size
-    mov     r0, #0
-\label:
-    subs    r1, #4
-    str     r0, [sp, r1]
-    bne     \label
-    ldr     r0, [sp]
-    mov     r2, #0
-    mov     r3, #0
-.endm
 
 
 .global compute_sbox_masked
@@ -777,7 +773,7 @@ aes_key_l3:
     cmp     r3, #32
     add     r7, r7, #128    @ 0x80
     bne     aes_key_loop
-    clear_stack 236 aes_key_clear_loop
+    clear_stack 236
     add     sp, #236        @ 0xec
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
@@ -988,7 +984,7 @@ bf128_mul_l5:
     mov     r0, r8
     strd    r5, r1, [r8]
     strd    r2, r4, [r8, #8]
-    clear_stack 300 bf128_mul_clear_loop
+    clear_stack 300
     add     sp, #300        @ 0x12c
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     str     r0, [sp]                        // CLEAR
@@ -1062,7 +1058,7 @@ bf128_mul_wrapper:
     mov     r1, r0                        // CLEAR
     mov     r2, r0                        // CLEAR
     mov     r3, r0                        // CLEAR
-    clear_stack 44 bf128_mul_wrapper_clear_loop
+    clear_stack 44
     add     sp, #44 @ 0x2c
     pop     {r4, r5, r6, r7, pc}
 
@@ -1106,7 +1102,7 @@ bf128_byte_combine_loop:
     mov     r0, r3
     strd    fp, sl, [r3]
     strd    r9, r8, [r3, #8]
-    clear_stack 68 bf128_byte_combine_clear_loop
+    clear_stack 68
     add     sp, #68 @ 0x44
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
@@ -1164,7 +1160,7 @@ bf128_byte_combine_vk_share_loop:
     mov     r0, r4
     strd    sl, r9, [r4]
     strd    r8, r7, [r4, #8]
-    clear_stack 76 bf128_byte_combine_vk_share_clear_loop
+    clear_stack 76
     add     sp, #76 @ 0x4c
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
@@ -1240,7 +1236,7 @@ bf128_byte_combine_bits:
     mov     r0, r3
     strd    r9, r6, [r3]
     strd    r8, r7, [r3, #8]
-    clear_stack 60 bf128_byte_combine_bits_clear_loop
+    clear_stack 60
     add     sp, #60 @ 0x3c
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
@@ -1990,7 +1986,7 @@ aes_enc_forward_backward_128_l11:
     cmp     lr, #4
     add     r4, r4, #64     @ 0x40
     bne     aes_enc_forward_backward_128_l13
-    clear_stack 772 aes_enc_forward_backward_128_clear_loop
+    clear_stack 772
     add     sp, sp, #772    @ 0x304
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
@@ -2061,7 +2057,7 @@ vk_128_l3:
     str     r3, [r2, #8]
     ldr     r0, [r5, #56]   @ 0x38
     mov     r4, r0
-    clear_stack 48 get_vk_128_clear_loop
+    clear_stack 48
     mov     r0, r4
     add     sp, #48 @ 0x30
     pop     {r4, r5, r6, pc}
