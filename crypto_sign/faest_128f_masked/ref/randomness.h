@@ -16,7 +16,7 @@ int rand_bytes(uint8_t* dst, size_t num_bytes);
 
 FAEST_END_C_DECL
 
-#if defined(STM32F4) || defined(MUPQ_NAMESPACE)
+#if defined(STM32F4) || defined(STM32L4) || defined(MUPQ_NAMESPACE)
 
 /* If we are building under pqm4 for either host or board, use external PRNG. */
 #define HAVE_RANDOMBYTES

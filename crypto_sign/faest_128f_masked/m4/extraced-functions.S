@@ -571,8 +571,8 @@ rot_word:
     bx      lr
 
 
-.global aes_key_schedule_backward_128_vbb_vk_round
-aes_key_schedule_backward_128_vbb_vk_round:
+.global aes_key_schedule_backward_128_vbb_vk_round_share
+aes_key_schedule_backward_128_vbb_vk_round_share:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     sub     sp, #236        @ 0xec
 // CLEAR STACK
@@ -1241,8 +1241,8 @@ bf128_byte_combine_bits:
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
 
-.global aes_enc_forward_backward_128
-aes_enc_forward_backward_128:
+.global aes_enc_forward_backward_128_share
+aes_enc_forward_backward_128_share:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     sub     sp, sp, #772    @ 0x304
     movs    r2, #0

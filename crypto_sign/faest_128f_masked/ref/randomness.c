@@ -136,7 +136,7 @@ int rand_bytes(uint8_t* dst, size_t len) {
 #endif
 #endif
 
-#ifdef STM32F4
+#ifdef STM32F4NO
 
 #include <stdint.h>
 #include <libopencm3/stm32/rng.h>
