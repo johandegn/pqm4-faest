@@ -97,14 +97,6 @@ static void ConstructVoleCMO(const uint8_t* iv, vec_com_t* vec_com, unsigned int
   if (h != NULL) {
     H1_final(h1_ctx, h, lambda_bytes * 2);
   }
-  /*
-  if (h != NULL) {
-    free(h1_ctx);
-  }
-  free(sd);
-  free(com);
-  free(r);
-  */
 }
 
 // NOTE - Assumes v is cleared (initially)!!
@@ -141,11 +133,6 @@ static void ConstructVoleRMO(const uint8_t* iv, unsigned int start, unsigned int
       }
     }
   }
-  /*
-  free(sd);
-  free(com);
-  free(r);
-  */
 }
 
 void partial_vole_commit_cmo(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
@@ -219,13 +206,7 @@ void partial_vole_commit_cmo(const uint8_t* rootKey, const uint8_t* iv, unsigned
 
   if (vole_mode.mode != EXCLUDE_U_HCOM_C) {
     H1_final(&h1_ctx, vole_mode.hcom, lambda_bytes * 2);
-    // free(h);
   }
-
-  /*
-  free(expanded_keys);
-  free(path);
-  */
 }
 
 void partial_vole_commit_rmo(const uint8_t* rootKey, const uint8_t* iv, unsigned int start,
@@ -257,10 +238,6 @@ void partial_vole_commit_rmo(const uint8_t* rootKey, const uint8_t* iv, unsigned
 
     col_idx += depth;
   }
-  /*
-  free(expanded_keys);
-  free(path);
-  */
 }
 
 // reconstruction
@@ -315,13 +292,6 @@ static void ReconstructVoleCMO(const uint8_t* iv, vec_com_rec_t* vec_com_rec, un
       }
     }
   }
-  /*
-  if (q != NULL) {
-    free(r);
-  }
-  free(sd);
-  free(com);
-  */
   if (h != NULL) {
     H1_final(&h1_ctx, h, lambda_bytes * 2);
   }
@@ -395,12 +365,6 @@ void partial_vole_reconstruct_cmo(const uint8_t* iv, const uint8_t* chall,
       break;
     }
   }
-  /*
-  free(vec_com_rec.b);
-  free(vec_com_rec.nodes);
-  free(vec_com_rec.com_j);
-  free(tree_nodes);
-  */
   if (vole_mode.mode != EXCLUDE_HCOM) {
     // free(h);
     H1_final(&h1_ctx, vole_mode.hcom, lambda_bytes * 2);
@@ -446,11 +410,6 @@ static void ReconstructVoleRMO(const uint8_t* iv, vec_com_rec_t* vec_com_rec, un
       }
     }
   }
-  /*
-  free(sd);
-  free(com);
-  free(r);
-  */
 }
 
 void partial_vole_reconstruct_rmo(const uint8_t* iv, const uint8_t* chall,
@@ -485,11 +444,4 @@ void partial_vole_reconstruct_rmo(const uint8_t* iv, const uint8_t* chall,
     ReconstructVoleRMO(iv, &vec_com_rec, lambda, ellhat_bytes, q, start, len, col_idx);
     col_idx += depth;
   }
-
-  /*
-  free(vec_com_rec.b);
-  free(vec_com_rec.nodes);
-  free(vec_com_rec.com_j);
-  free(tree_nodes);
-  */
 }

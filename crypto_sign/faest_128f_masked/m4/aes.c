@@ -98,16 +98,6 @@ static bf8_t compute_sbox(bf8_t in) {
 
 // Moved to assmelby to ensure constant time
 void aes_increment_iv(uint8_t* iv);
-/*
-void aes_increment_iv(uint8_t* iv) {
-  uint8_t val = 1;
-  // Constant time increment
-  for (unsigned int i = 16; i > 0; i--) {
-    iv[i - 1] += val;
-    val = val * !iv[i - 1];
-  }
-}
-*/
 
 // ## AES ##
 // Round Functions
@@ -132,54 +122,8 @@ static int sub_bytes(aes_block_t state, unsigned int block_words) {
 }
 
 void shift_row(aes_block_t state, unsigned int block_words);
-/*
-void shift_row(aes_block_t state, unsigned int block_words) {
-  aes_block_t new_state = {0};
-  switch (block_words) {
-  case 4:
-  case 6:
-    for (unsigned int i = 0; i < block_words; ++i) {
-      new_state[i][0] = state[i][0];
-      new_state[i][1] = state[(i + 1) % block_words][1];
-      new_state[i][2] = state[(i + 2) % block_words][2];
-      new_state[i][3] = state[(i + 3) % block_words][3];
-    }
-    break;
-  case 8:
-    for (unsigned int i = 0; i < block_words; i++) {
-      new_state[i][0] = state[i][0];
-      new_state[i][1] = state[(i + 1) % 8][1];
-      new_state[i][2] = state[(i + 3) % 8][2];
-      new_state[i][3] = state[(i + 4) % 8][3];
-    }
-    break;
-  }
-
-  for (unsigned int i = 0; i < block_words; ++i) {
-    memcpy(&state[i][0], &new_state[i][0], AES_NR);
-  }
-}
-*/
 
 void mix_column(aes_block_t state, unsigned int block_words);
-/*
-void mix_column(aes_block_t state, unsigned int block_words) {
-  for (unsigned int c = 0; c < block_words; c++) {
-    bf8_t tmp = bf8_mul(state[c][0], 0x02) ^ bf8_mul(state[c][1], 0x03) ^ state[c][2] ^ state[c][3];
-    bf8_t tmp_1 =
-        state[c][0] ^ bf8_mul(state[c][1], 0x02) ^ bf8_mul(state[c][2], 0x03) ^ state[c][3];
-    bf8_t tmp_2 =
-        state[c][0] ^ state[c][1] ^ bf8_mul(state[c][2], 0x02) ^ bf8_mul(state[c][3], 0x03);
-    bf8_t tmp_3 =
-        bf8_mul(state[c][0], 0x03) ^ state[c][1] ^ state[c][2] ^ bf8_mul(state[c][3], 0x02);
-
-    state[c][0] = tmp;
-    state[c][1] = tmp_1;
-    state[c][2] = tmp_2;
-    state[c][3] = tmp_3;
-  }
-}
-*/
 
 // Key Expansion functions
 void sub_words(bf8_t* words) {
@@ -190,15 +134,6 @@ void sub_words(bf8_t* words) {
 }
 
 void rot_word(bf8_t* words);
-/*
-void __attribute__ ((noinline)) rot_word(bf8_t* words) {
-  bf8_t tmp = words[0];
-  words[0]  = words[1];
-  words[1]  = words[2];
-  words[2]  = words[3];
-  words[3]  = tmp;
-}
-*/
 
 int expand_key(aes_round_keys_t* round_keys, const uint8_t* key, unsigned int key_words,
                unsigned int block_words, unsigned int num_rounds) {
