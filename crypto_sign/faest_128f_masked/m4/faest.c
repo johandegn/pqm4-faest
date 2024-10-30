@@ -360,9 +360,9 @@ void faest_sign_masked(uint8_t* sig, const uint8_t* msg, size_t msglen, const ui
 
   uint8_t* w_share = alloca(2 * (l + 7) / 8);
   w_share = aes_extend_witness_masked(&key_share[0][0], &owf_input_share[0][0], params, w_share);
-  xor_u8_array(w_share, get_vole_u_share(&vbb, 0), signature_d(sig, params), ell_bytes);
-  xor_u8_array(signature_d(sig, params), get_vole_u_share(&vbb, 1), signature_d(sig, params), ell_bytes);
-  xor_u8_array(signature_d(sig, params), w_share + (l + 7) / 8, signature_d(sig, params), ell_bytes);
+  xor_u8_array_wrapper(w_share, get_vole_u_share(&vbb, 0), signature_d(sig, params), ell_bytes);
+  xor_u8_array_wrapper(signature_d(sig, params), get_vole_u_share(&vbb, 1), signature_d(sig, params), ell_bytes);
+  xor_u8_array_wrapper(signature_d(sig, params), w_share + (l + 7) / 8, signature_d(sig, params), ell_bytes);
   
   uint8_t chall_2[3 * MAX_LAMBDA_BYTES + 8];
   hash_challenge_2(chall_2, chall_1, signature_u_tilde(sig, params), h_v, signature_d(sig, params),
