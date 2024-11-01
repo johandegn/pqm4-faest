@@ -128,8 +128,8 @@ void vector_open(vec_com_t* vec_com, const uint8_t* b, uint8_t* cop, uint8_t* co
     // NOTE: fix to ensure constant time
     prg(node, iv, children, lambda, lambda_bytes * 2);
     save_left = b[depth - 1 - i];
-    uint8_t* dst_child = children + (lambda_bytes * save_left);
-    node = children + (lambda_bytes * !save_left);
+    uint8_t* dst_child = children + (lambda_bytes * !save_left);
+    node = children + (lambda_bytes * save_left);
     memcpy(cop + (lambda_bytes * i), dst_child, lambda_bytes);
   }
   // Step: 7
