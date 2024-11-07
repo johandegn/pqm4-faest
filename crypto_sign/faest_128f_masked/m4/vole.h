@@ -23,8 +23,8 @@ typedef struct sign_vole_mode_ctx_t {
   uint8_t* c;
 } sign_vole_mode_ctx_t;
 
-ATTR_CONST ATTR_ALWAYS_INLINE inline sign_vole_mode_ctx_t vole_mode_all_sign(uint8_t* v, uint8_t* u,
-                                                               uint8_t* hcom, uint8_t* c) {
+ATTR_CONST ATTR_ALWAYS_INLINE inline sign_vole_mode_ctx_t
+vole_mode_all_sign(uint8_t* v, uint8_t* u, uint8_t* hcom, uint8_t* c) {
   assert(v != NULL);
   assert(u != NULL);
   assert(hcom != NULL);
@@ -33,8 +33,8 @@ ATTR_CONST ATTR_ALWAYS_INLINE inline sign_vole_mode_ctx_t vole_mode_all_sign(uin
   return ctx;
 }
 
-ATTR_CONST ATTR_ALWAYS_INLINE inline sign_vole_mode_ctx_t vole_mode_u_hcom_c(uint8_t* u, uint8_t* hcom,
-                                                                    uint8_t* c) {
+ATTR_CONST ATTR_ALWAYS_INLINE inline sign_vole_mode_ctx_t
+vole_mode_u_hcom_c(uint8_t* u, uint8_t* hcom, uint8_t* c) {
   assert(u != NULL);
   assert(hcom != NULL);
   assert(c != NULL);
@@ -54,7 +54,8 @@ typedef struct verify_vole_mode_ctx_t {
   uint8_t* hcom;
 } verify_vole_mode_ctx_t;
 
-ATTR_CONST ATTR_ALWAYS_INLINE inline verify_vole_mode_ctx_t vole_mode_all_verify(uint8_t* q, uint8_t* hcom) {
+ATTR_CONST ATTR_ALWAYS_INLINE inline verify_vole_mode_ctx_t vole_mode_all_verify(uint8_t* q,
+                                                                                 uint8_t* hcom) {
   assert(q != NULL);
   assert(hcom != NULL);
   verify_vole_mode_ctx_t ctx = {INCLUDE_ALL, q, hcom};
@@ -78,21 +79,22 @@ int ChalDec(const uint8_t* chal, unsigned int i, unsigned int k0, unsigned int t
             unsigned int t1, uint8_t* chalout);
 
 // Signer
-void partial_vole_commit_cmo(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
-                             unsigned int chunk_start, unsigned int chunk_end,
-                             sign_vole_mode_ctx_t vole_mode, const faest_paramset_t* params);
+void partial_vole_commit_column(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
+                                unsigned int chunk_start, unsigned int chunk_end,
+                                sign_vole_mode_ctx_t vole_mode, const faest_paramset_t* params);
 
-void partial_vole_commit_rmo(const uint8_t* rootKey, const uint8_t* iv, unsigned int start,
-                             unsigned int len, const faest_paramset_t* params, uint8_t* v);
+void partial_vole_commit_row(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
+                             unsigned int start, unsigned int end, const faest_paramset_t* params,
+                             uint8_t* v);
 
 // Verifier
-void partial_vole_reconstruct_cmo(const uint8_t* iv, const uint8_t* chall, const uint8_t* const* pdec, 
-                                  const uint8_t* const* com_j, unsigned int ellhat,
-                                  unsigned int start, unsigned int len,
-                                  verify_vole_mode_ctx_t vole_mode, 
-                                  const faest_paramset_t* params);
+void partial_vole_reconstruct_column(const uint8_t* iv, const uint8_t* chall,
+                                     const uint8_t* const* pdec, const uint8_t* const* com_j,
+                                     unsigned int ellhat, unsigned int start, unsigned int len,
+                                     verify_vole_mode_ctx_t vole_mode,
+                                     const faest_paramset_t* params);
 
-void partial_vole_reconstruct_rmo(const uint8_t* iv, const uint8_t* chall,
+void partial_vole_reconstruct_row(const uint8_t* iv, const uint8_t* chall,
                                   const uint8_t* const* pdec, const uint8_t* const* com_j,
                                   uint8_t* q, unsigned int ellhat, const faest_paramset_t* params,
                                   unsigned int start, unsigned int len);

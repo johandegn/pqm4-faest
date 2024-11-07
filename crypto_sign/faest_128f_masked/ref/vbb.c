@@ -652,12 +652,14 @@ void setup_mask_storage(vbb_t* vbb, uint8_t* vk_mask, uint8_t* v_mask, uint8_t* 
 
   // Vk masking
   vbb->vk_mask_cache = vk_mask;//malloc(vbb->params->faest_param.Lke * lambdaBytes);
+  /*
   for (unsigned int i = 0; i < vbb->params->faest_param.Lke * lambda / 8; i++) {
     rand_mask(vbb->vk_mask_cache + i, 1);
   }
   for (unsigned int i = 0; i < vbb->params->faest_param.Lke * lambda / 8; i++) {
     vbb->vk_cache[i] ^= vbb->vk_mask_cache[i];
   }
+  */
 
   // Vole masking
   vbb->v_mask_cache = v_mask;//malloc(ellhat * lambdaBytes);
