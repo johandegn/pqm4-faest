@@ -327,13 +327,10 @@ void faest_sign_masked(uint8_t* sig, const uint8_t* msg, size_t msglen, const ui
   uint8_t* vk_cache      = NULL;
   if (!(params->faest_paramid > 6)) {
     vk_buf        = alloca(lambdaBytes);
-    if (len < ell_hat){
-      vk_cache      = alloca(params->faest_param.Lke * lambdaBytes);
-    }
+    vk_cache      = alloca(params->faest_param.Lke * lambdaBytes);
   }
   init_stack_allocations_sign(&vbb, hcom, u, v_cache, v_buf, vk_buf, vk_cache);
   init_vbb_sign(&vbb, len, rootkey, signature_iv(sig, params), signature_c(sig, 0, params), params);
-
   uint8_t chall_1[(5 * MAX_LAMBDA_BYTES) + 8];
   hash_challenge_1(chall_1, mu, get_com_hash(&vbb), signature_c(sig, 0, params),
                    signature_iv(sig, params), lambda, l, tau);
@@ -354,7 +351,7 @@ void faest_sign_masked(uint8_t* sig, const uint8_t* msg, size_t msglen, const ui
     H1_final(&h1_ctx_1, h_v, lambdaBytes * 2);
   }
 
-  uint8_t* vk_mask;// = alloca(params->faest_param.Lke * lambdaBytes); //Never needed in full size (masked only for full sizze)
+  uint8_t* vk_mask = alloca(params->faest_param.Lke * lambdaBytes);
   uint8_t* v_mask = alloca(ell_hat * lambdaBytes);
   uint8_t* u_mask = alloca(ell_hat/8);
   setup_mask_storage(&vbb, vk_mask, v_mask, u_mask);
@@ -481,9 +478,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
   uint8_t* vk_cache      = NULL;
   if (!(params->faest_paramid > 6)) {
     vk_buf        = alloca(lambdaBytes);
-    if (len < ell_hat){
-      vk_cache      = alloca(params->faest_param.Lke * lambdaBytes);
-    }
+    vk_cache      = alloca(params->faest_param.Lke * lambdaBytes);
   }
   init_stack_allocations_sign(&vbb, hcom, u, v_cache, v_buf, vk_buf, vk_cache);
   init_vbb_sign(&vbb, len, rootkey, signature_iv(sig, params), signature_c(sig, 0, params), params);

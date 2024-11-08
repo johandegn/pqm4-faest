@@ -161,13 +161,14 @@ void vector_reconstruction(const uint8_t* cop, const uint8_t* com_j, const uint8
 void extract_sd_com(vec_com_t* vec_com, const uint8_t* iv, uint32_t lambda, unsigned int index,
                 uint8_t* sd, uint8_t* com) {
   const unsigned int lambda_bytes = lambda / 8;
+  const unsigned int depth        = vec_com->depth;
 
   uint8_t* children = alloca(lambda_bytes * 2);
   uint8_t* l_child  = children;
   uint8_t* r_child  = l_child + lambda_bytes;
 
   size_t lo         = 0;
-  size_t leaf_count = (1 << vec_com->depth);
+  size_t leaf_count = (1 << depth);
   size_t hi         = leaf_count - 1;
   size_t center;
 
@@ -176,26 +177,35 @@ void extract_sd_com(vec_com_t* vec_com, const uint8_t* iv, uint32_t lambda, unsi
   unsigned int path_index = vec_com->path.index;
   uint8_t* path_nodes     = vec_com->path.nodes;
   if (path_nodes != NULL && !vec_com->path.empty) {
-    for (; i < vec_com->depth; i++) {
+    for (; i < depth;) {
+      i++;
       center = (hi - lo) / 2 + lo;
       if (index <= center) { // Left
+        hi = center;
         if (path_index > center)
           break;
-        hi = center;
       } else { // Right
+        lo = center + 1;
         if (path_index < center + 1)
           break;
-        lo = center + 1;
       }
     }
   }
 
   // Set starting node
-  uint8_t* node = (i > 0) ? path_nodes + (i - 1) * lambda_bytes 
-                          : vec_com->rootKey;
+  uint8_t* node;
+  if (i > 0) {
+    node = path_nodes + (i - 1) * lambda_bytes * 2;
+    // if last node was right child
+    if (hi != center) {
+      node += lambda_bytes;
+    }
+  } else {
+    node = vec_com->rootKey;
+  }
 
   // Continue computing until leaf is reached
-  for (; i < vec_com->depth; i++) {
+  for (; i < depth; i++) {
     prg(node, iv, children, lambda, lambda_bytes * 2);
 
     center = (hi - lo) / 2 + lo;
@@ -206,11 +216,15 @@ void extract_sd_com(vec_com_t* vec_com, const uint8_t* iv, uint32_t lambda, unsi
       node = r_child;
       lo   = center + 1;
     }
-    if (path_nodes != NULL)
-      memcpy(path_nodes + i * lambda_bytes, node, lambda_bytes);
+    if (path_nodes != NULL) {
+      memcpy(path_nodes + i * lambda_bytes * 2, node, lambda_bytes * 2);
+    }
   }
 
-  vec_com->path.index = index;
+  if (path_nodes != NULL) {
+    vec_com->path.index = index;
+    vec_com->path.empty = false;
+  }
 
   H0(node, lambda, iv, sd, com);
   //free(children);

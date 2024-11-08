@@ -150,13 +150,7 @@ void partial_vole_commit_column(const uint8_t* rootKey, const uint8_t* iv, unsig
 
   if (vole_mode.mode != EXCLUDE_U_HCOM_C) {
     H1_final(&hcom_ctx, vole_mode.hcom, lambda_bytes * 2);
-    // free(h);
   }
-
-  /*
-  free(expanded_keys);
-  free(path);
-  */
 }
 
 void partial_vole_commit_row(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
