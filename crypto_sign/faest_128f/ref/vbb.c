@@ -212,8 +212,8 @@ static void apply_correction_values_row(vbb_t* vbb, unsigned int start, unsigned
   const uint8_t* c                 = dsignature_c(vbb->sig, 0, vbb->params);
   const unsigned int len_bytes = (len + 7) / 8;
 
-  uint8_t* c_trunc      = malloc(len_bytes);
-  uint8_t* c_trunc_mask = malloc(len_bytes);
+  uint8_t* c_trunc      = alloca(len_bytes);
+  uint8_t* c_trunc_mask = alloca(len_bytes);
   
   unsigned long col_idx  = k0;
   for (unsigned int i = 1; i < tau; i++) {
@@ -299,8 +299,8 @@ static void apply_witness_values_row(vbb_t* vbb, unsigned int start, unsigned in
   
   // Make d_trunc
   const unsigned int len_bytes  = (effective_len + 7) / 8;
-  uint8_t* d_trunc              = malloc(len_bytes);
-  uint8_t* d_trunc_mask         = malloc(len_bytes);
+  uint8_t* d_trunc              = alloca(len_bytes);
+  uint8_t* d_trunc_mask         = alloca(len_bytes);
 
   unsigned int bit_offset = start % 8;
   unsigned int start_byte = start / 8;
