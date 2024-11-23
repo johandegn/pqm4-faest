@@ -38,9 +38,81 @@ void __attribute__ ((noinline)) sub_words_masked(bf8_t* words) {
   }
 }
 
-void expand_128key_masked(aes_round_keys_t* round_keys_share, const uint8_t* key_share,
+void __attribute__ ((noinline)) copy_first_round_key(aes_round_keys_t* round_keys_share, const uint8_t* key_share,
+                          unsigned int key_words, unsigned int block_words);
+/*
+void __attribute__ ((noinline)) copy_first_round_key(aes_round_keys_t* round_keys_share, const uint8_t* key_share,
+                          unsigned int key_words, unsigned int block_words) {
+  for (unsigned int k = 0; k < key_words; k++) {
+    round_keys_share[0].round_keys[k / block_words][k % block_words][0] =
+        bf8_load(&key_share[4 * k]);
+    round_keys_share[0].round_keys[k / block_words][k % block_words][1] =
+        bf8_load(&key_share[(4 * k) + 1]);
+    round_keys_share[0].round_keys[k / block_words][k % block_words][2] =
+        bf8_load(&key_share[(4 * k) + 2]);
+    round_keys_share[0].round_keys[k / block_words][k % block_words][3] =
+        bf8_load(&key_share[(4 * k) + 3]);
+  }
+}
+*/
+
+void __attribute__ ((noinline)) setup_round_key_tmp(bf8_t* tmp_share, aes_round_keys_t* round_keys_share, unsigned int k, 
+                         unsigned int key_words, unsigned int block_words);
+/*
+void __attribute__ ((noinline)) setup_round_key_tmp(bf8_t* tmp_share, aes_round_keys_t* round_keys_share, unsigned int k, 
+                         unsigned int key_words, unsigned int block_words){
+  for (int i = 0; i < AES_NR; i++){
+      tmp_share[i] = round_keys_share[0].round_keys[(k - 1) / block_words][(k - 1) % block_words][i];
+  }
+  if (k % key_words == 0){
+    rot_word(tmp_share);
+  }
+}
+*/
+
+void __attribute__ ((noinline)) finalize_round_key(aes_round_keys_t* round_keys_share, unsigned int k, unsigned int key_words,
+                        bf8_t* tmp_share, unsigned int block_words);
+/*
+void __attribute__ ((noinline)) finalize_round_key(aes_round_keys_t* round_keys_share, unsigned int k, unsigned int key_words,
+                        bf8_t* tmp_share, unsigned int block_words){
+  unsigned int m = k - key_words;
+  round_keys_share[0].round_keys[k / block_words][k % block_words][0] =
+      round_keys_share[0].round_keys[m / block_words][m % block_words][0] ^ tmp_share[0];
+  round_keys_share[0].round_keys[k / block_words][k % block_words][1] =
+      round_keys_share[0].round_keys[m / block_words][m % block_words][1] ^ tmp_share[1];
+  round_keys_share[0].round_keys[k / block_words][k % block_words][2] =
+      round_keys_share[0].round_keys[m / block_words][m % block_words][2] ^ tmp_share[2];
+  round_keys_share[0].round_keys[k / block_words][k % block_words][3] =
+      round_keys_share[0].round_keys[m / block_words][m % block_words][3] ^ tmp_share[3];
+}
+*/
+
+void __attribute__ ((noinline)) expand_128key_masked(aes_round_keys_t* round_keys_share, const uint8_t* key_share,
                           unsigned int key_words, unsigned int block_words,
                           unsigned int num_rounds);
+/*
+void __attribute__ ((noinline)) expand_128key_masked(aes_round_keys_t* round_keys_share, const uint8_t* key_share,
+                          unsigned int key_words, unsigned int block_words,
+                          unsigned int num_rounds) {
+  
+  copy_first_round_key(round_keys_share, key_share, key_words, block_words);
+  copy_first_round_key(round_keys_share + 1, key_share + MAX_LAMBDA_BYTES, key_words, block_words);
+
+  for (unsigned int k = key_words; k < block_words * (num_rounds + 1); ++k) {
+    bf8_t tmp_share[2][AES_NR];
+    setup_round_key_tmp(&tmp_share[0][0], round_keys_share, k, key_words, block_words);
+    setup_round_key_tmp(&tmp_share[1][0], round_keys_share + 1, k, key_words, block_words);
+    
+    if (k % key_words == 0) {
+      sub_words_masked(&tmp_share[0][0]);
+      tmp_share[0][0] ^= round_constants((k / key_words) - 1);
+    }
+
+    finalize_round_key(round_keys_share, k, key_words, &tmp_share[0][0], block_words);
+    finalize_round_key(round_keys_share + 1, k, key_words, &tmp_share[1][0] , block_words);
+  }
+}
+*/
 
 void aes128_init_round_keys_masked(aes_round_keys_t* round_key_share, const uint8_t* key) {
   expand_128key_masked(round_key_share, key, KEY_WORDS_128, AES_BLOCK_WORDS, ROUNDS_128);

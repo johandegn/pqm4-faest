@@ -351,161 +351,197 @@ aes_encrypt_round_masked:
     add     sp, #20
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
+.global copy_first_round_key
+copy_first_round_key:
+    cbz     r2, cfrk_exit
+    push    {r4, lr}
+    mov     lr, #0
+cfrk_loop:
+    udiv    r4, lr, r3
+    mls     ip, r3, r4, lr
+    add     ip, ip, r4, lsl #3
+    ldrb    r4, [r1, #0]
+    strb    r4, [r0, ip, lsl #2]
+    add     ip, r0, ip, lsl #2
+    ldrb    r4, [r1, #1]
+    strb    r4, [ip, #1]
+    ldrb    r4, [r1, #2]
+    strb    r4, [ip, #2]
+    add     lr, lr, #1
+    ldrb    r4, [r1, #3]
+    strb    r4, [ip, #3]
+    cmp     r2, lr
+    add     r1, r1, #4
+    bne     cfrk_loop
+    mov     r0, #0          // CLEAR
+    mov     r1, #0          // CLEAR
+    mov     r2, #0          // CLEAR
+    mov     r3, #0          // CLEAR
+    mov     r4, #0          // CLEAR
+    pop     {r4, pc}
+cfrk_exit:
+    bx      lr
+
+.global setup_round_key_tmp
+setup_round_key_tmp:
+    push    {r4, r5, lr}
+    ldr     r5, [sp, #12]
+    add     ip, r2, #4294967295     @ 0xffffffff
+    udiv    r4, ip, r5
+    mls     ip, r5, r4, ip
+    add     ip, ip, r4, lsl #3
+    add     r1, r1, ip, lsl #2
+    adds    r4, r0, #3
+    add     ip, r0, #4294967295     @ 0xffffffff
+srkt_loop:
+    ldrb    lr, [r1], #1
+    strb    lr, [ip, #1]!
+    cmp     ip, r4
+    bne     srkt_loop
+    udiv    r1, r2, r3
+    mls     r2, r3, r1, r2
+    cbz     r2, srkt_rotword
+    mov     lr, #0          // CLEAR
+    mov     r0, #0          // CLEAR
+    mov     r1, #0          // CLEAR
+    mov     r2, #0          // CLEAR
+    mov     r3, #0          // CLEAR
+    mov     r4, #0          // CLEAR
+    mov     r5, #0          // CLEAR
+    pop     {r4, r5, pc}
+srkt_rotword:
+    mov     lr, #0          // CLEAR
+    mov     r1, #0          // CLEAR
+    mov     r2, #0          // CLEAR
+    mov     r3, #0          // CLEAR
+    mov     r4, #0          // CLEAR
+    mov     r5, #0          // CLEAR
+    ldmia   sp!, {r4, r5, lr}
+    b       rot_word
+
+.global finalize_round_key
+finalize_round_key:
+    push    {r4, lr}
+    ldr     r4, [sp, #8]
+    ldrb    lr, [r3]
+    subs    r2, r1, r2
+    udiv    ip, r2, r4
+    mls     r2, r4, ip, r2
+    add     r2, r2, ip, lsl #3
+    ldrb    ip, [r0, r2, lsl #2]
+    eor     ip, ip, lr
+    udiv    lr, r1, r4
+    mls     r1, r4, lr, r1
+    add     r1, r1, lr, lsl #3
+    add     r2, r0, r2, lsl #2
+    strb    ip, [r0, r1, lsl #2]
+    add     r0, r0, r1, lsl #2
+    ldrb    r4, [r3, #1]
+    ldrb    r1, [r2, #1]
+    eors    r1, r4
+    strb    r1, [r0, #1]
+    ldrb    r1, [r2, #2]
+    ldrb    r4, [r3, #2]
+    eors    r1, r4
+    strb    r1, [r0, #2]
+    ldrb    r2, [r2, #3]
+    ldrb    r3, [r3, #3]
+    eors    r3, r2
+    strb    r3, [r0, #3]
+    mov     lr, #0          // CLEAR
+    mov     r0, #0          // CLEAR
+    mov     r1, #0          // CLEAR
+    mov     r2, #0          // CLEAR
+    mov     r3, #0          // CLEAR
+    mov     r4, #0          // CLEAR
+    pop     {r4, pc}
+
 .global expand_128key_masked
 expand_128key_masked:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
-    sub     sp, #8
-    mov     r6, r0
-    ldr     r5, [sp, #40]   @ 0x28
-    mov     r4, r3
-    mov     r7, r2
-    cbz     r2, expand_128key_masked_l1
-    mov     r2, r1
-    movs    r0, #0
-expand_128key_masked_l2:
-    udiv    ip, r0, r4
-    mls     r3, r4, ip, r0
-    add     r3, r3, ip, lsl #3
-    ldrb    ip, [r2]
-    strb    ip, [r6, r3, lsl #2]
-    add     r3, r6, r3, lsl #2
-    ldrb    ip, [r2, #1]
-    strb    ip, [r3, #1]
-    ldrb    ip, [r2, #2]
-    strb    ip, [r3, #2]
-    mov     ip, r0
-    adds    r0, #1
-    ldrb    lr, [r2, #3]
-    strb    lr, [r3, #3]
-    cmp     r7, r0
-    add     r2, r2, #4
-    bne     expand_128key_masked_l2
-    movs    r2, #0
-expand_128key_masked_l3:
-    udiv    r0, r2, r4
-    mls     r3, r4, r0, r2
-    add     r3, r3, r0, lsl #3
-    add     r3, r6, r3, lsl #2
-    ldrb    r0, [r1, #32]
-    strb    r0, [r3, #480]  @ 0x1e0
-    ldrb    r0, [r1, #33]   @ 0x21
-    strb    r0, [r3, #481]  @ 0x1e1
-    ldrb    r0, [r1, #34]   @ 0x22
-    strb    r0, [r3, #482]  @ 0x1e2
-    ldrb    lr, [r1, #35]   @ 0x23
-    strb    lr, [r3, #483]  @ 0x1e3
-    cmp     ip, r2
-    add     r1, r1, #4
-    add     r2, r2, #1
-    bne     expand_128key_masked_l3
-expand_128key_masked_l1:
-    mla     r9, r5, r4, r4
-    cmp     r7, r9
-    bcs     expand_128key_masked_l4_step
-    mov     r5, r7
-    add     r8, r6, #480    @ 0x1e0
-    b       expand_128key_masked_l5
-expand_128key_masked_l6:
-    uxtb    r1, r3
-    mov     r3, #0                          // CLEAR
-    subs    r3, r5, r7
-    udiv    r2, r3, r4
-    mls     r3, r4, r2, r3
-    add     r3, r3, r2, lsl #3
-    ldrb    lr, [sp, #1]
-    ldrb    ip, [sp, #2]
-    udiv    r0, r5, r4
-    movs    r2, #0
-    bfi     r2, r1, #0, #8
-    mov     r1, #0                          // CLEAR
-    bfi     r2, lr, #8, #8
-    mov     lr, #0                          // CLEAR
-    ldrb    lr, [sp, #3]
-    mls     r1, r4, r0, r5
-    bfi     r2, ip, #16, #8
-    mov     ip, #0                          // CLEAR
-    ldr     ip, [r6, r3, lsl #2]
-    add     r1, r1, r0, lsl #3
-    bfi     r2, lr, #24, #8
-    mov     lr, #0                          // CLEAR
-    eor     r2, r2, ip
-    str     r2, [r6, r1, lsl #2]
-    nop                                     // CLEAR
-    ldr     ip, [sp, #40]                   // CLEAR
-    nop                                     // CLEAR
-    mov     r2, #0                          // CLEAR
-    nop                                     // CLEAR
-    str     r6, [sp, #0]                    // CLEAR
-    nop                                     // CLEAR
-    ldr     r2, [sp, #4]
-    ldr     ip, [sp, #40]                   // CLEAR
-    ldr     r3, [r8, r3, lsl #2]
-    ldr     ip, [sp, #40]                   // CLEAR
-    adds    r5, #1
-    eors    r3, r2
-    cmp     r5, r9
-    str     r3, [r8, r1, lsl #2]
-    str     r6, [sp, #4]                    // CLEAR
-    bne     expand_128key_masked_l5
-expand_128key_masked_l4_step:
-    b       expand_128key_masked_l4
-expand_128key_masked_l5:
-    mov     r3, #0                          // CLEAR
-    nop                                     // CLEAR
-    mov     r1, #0                          // CLEAR
-    nop                                     // CLEAR
-    mov     r2, #0                          // CLEAR
-    nop                                     // CLEAR
-    mov     lr, #0                          // CLEAR
-    nop                                     // CLEAR
-    mov     ip, #0                          // CLEAR
-    nop                                     // CLEAR
-    mov     r0, #0                          // CLEAR
-    str     r0, [sp]                        // CLEAR
-    str     r0, [sp, #4]                    // CLEAR
-    udiv    sl, r5, r7
-    subs    r3, r5, #1
-    udiv    r2, r3, r4
-    mls     r3, r4, r2, r3
-    add     r3, r3, r2, lsl #3
-    add     r2, r3, #120    @ 0x78
-    ldr     r3, [r6, r3, lsl #2]
-    ldr     r1, [sp, #40]                   // CLEAR
-    str     r3, [sp, #0]
-    str     r6, [sp, #4]                    // CLEAR
-    nop                                     // CLEAR
-    ldr     r1, [r6, r2, lsl #2]
-    ldr     r2, [sp, #40]                   // CLEAR
-    str     r1, [sp, #4]
-    str     r2, [sp, #40]                   // CLEAR
-    mls     r2, r7, sl, r5
-    cmp     r2, #0
-    bne     expand_128key_masked_l6
-    mov     r0, sp
-    bl      rot_word
-    add     r0, sp, #4
-    bl      rot_word
-    mov     r0, sp
+    sub     sp, #16
+    mov     r8, r0
+    ldr     r4, [sp, #48]   @ 0x30
+    mov     r5, r2
+    mov     r6, r3
+    mov     r7, r1
+    add.w   r9, r8, #480    @ 0x1e0
+    bl      copy_first_round_key
+    mla     sl, r4, r6, r6
+    add.w   r1, r7, #32
+    mov     r3, r6
+    mov     r2, r5
+    mov     r0, r9
+    bl      copy_first_round_key
+    cmp     r5, sl
+    bcs.n   ekm_exit
+    mov     r4, r5
+    b.n     ekm_fwd
+ekm_loop: 
+    mov     r1, r4
+    add     r3, sp, #8
+    mov     r2, r5
+    str     r6, [sp, #0]
+    mov     r0, r8
+    bl      finalize_round_key
+    mov     r1, r4
+    str     r6, [sp, #0]
+    add     r3, sp, #12
+    mov     r2, r5
+    mov     r0, r9
+    adds    r4, #1
+    bl      finalize_round_key
+    cmp     r4, sl
+    beq.n   ekm_exit
+ekm_fwd: 
+    mov     r0, #0              //CLEAR
+    str     r0, [sp, #8]        //CLEAR
+    str     r0, [sp, #12]       //CLEAR
+    mov     r3, r5
+    mov     r2, r4
+    mov     r1, r8
+    str     r6, [sp, #0]
+    add     r0, sp, #8
+    bl      setup_round_key_tmp
+    mov     r3, r5
+    str     r6, [sp, #0]
+    mov     r2, r4
+    mov     r1, r9
+    add     r0, sp, #12
+    bl      setup_round_key_tmp
+    udiv    r7, r4, r5
+    mls     r3, r5, r7, r4
+    cmp     r3, #0
+    bne.n   ekm_loop
+    add     r0, sp, #8
+    subs    r7, #1
     bl      sub_words_masked
-    add     r0, sl, #4294967295     @ 0xffffffff
-    uxtb    r0, r0
+    uxtb    r0, r7
     bl      round_constants
-    ldrb    r3, [sp]
-    eors    r3, r0
-    b       expand_128key_masked_l6
-expand_128key_masked_l4:
+    ldrb.w  r3, [sp, #8]
+    eors    r0, r3
+    strb.w  r0, [sp, #8]
+    mov     r0, #0              //CLEAR
+    b.n     ekm_loop
+ekm_exit:
     // CLEAR STACK
-    mov     r3, #0
-    nop
-    mov     r2, #0
-    nop
     mov     r0, #0
-    nop
+    str     r0, [sp]
+    str     r0, [sp, #4]
+    str     r0, [sp, #8]
+    str     r0, [sp, #12]
     mov     r1, #0
-    str     r1, [sp]
-    str     r1, [sp, #4]
-    add     sp, #8
-    ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+    mov     r2, #0
+    mov     r3, #0
+    mov     r4, #0
+    mov     r5, #0
+    mov     r6, #0
+    mov     r7, #0
+    mov     r8, #0
+    mov     r9, #0
+    mov     sl, #0
+    add     sp, #16
+    ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 
 
 .global bf8_inv_masked
