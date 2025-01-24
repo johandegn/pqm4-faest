@@ -32,43 +32,6 @@ aes_increment_iv:
     str     r0, [r4]
     pop     {r4, pc}
 
-.global compute_sbox_masked
-compute_sbox_masked:
-    push    {r4, r5, r6, lr}
-    sub     sp, #4
-    mov     r6, #0
-    str     r6, [sp]
-
-    mov     r5, r2
-    mov     r4, r3
-    bl      bf8_inv_masked
-    
-    strh    r6, [sp]    //CLEAR
-    mov     r3, #0      //CLEAR
-    mov     r0, r6      //CLEAR
-    ldrb    r1, [sp]    //CLEAR
-
-    ldrb    r0, [r5]
-    bl      affine
-    strb    r0, [r5]
-    
-    strh    r6, [sp]    //CLEAR
-    mov     r3, #0      //CLEAR
-    mov     r0, r6      //CLEAR
-    ldrb    r1, [sp]    //CLEAR
-
-    ldrb    r0, [r4]
-    bl      affine_incomplete
-    strb    r0, [r4]
-
-    str     r6, [sp]    //CLEAR
-    mov     r3, #0      //CLEAR
-    mov     r0, r6      //CLEAR
-    ldrb    r1, [sp]    //CLEAR
-
-    add     sp, #4
-    pop     {r4, r5, r6, pc}
-
 .global aes_extend_witness_masked_output
 aes_extend_witness_masked_output:
     adds    r2, #7
@@ -543,7 +506,7 @@ ekm_exit:
     add     sp, #16
     ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 
-
+/*
 .global bf8_inv_masked
 bf8_inv_masked:
     stmdb   sp!, {r4, r5, r6, r7, r8, lr}
@@ -596,3 +559,4 @@ bf8_inv_masked:
     str     r1, [sp, #4]
     add     sp, #8
     ldmia   sp!, {r4, r5, r6, r7, r8, pc}
+ */
