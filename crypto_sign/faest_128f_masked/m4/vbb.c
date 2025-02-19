@@ -145,11 +145,15 @@ static inline void apply_correction_values_column(vbb_t* vbb, unsigned int start
   const uint8_t* chall3 = dsignature_chall_3(vbb->sig, vbb->params);
   const uint8_t* c      = dsignature_c(vbb->sig, 0, vbb->params);
   unsigned int col_idx  = k0;
+  vbb->cache_idx = start;
   for (unsigned int i = 1; i < tau; i++) {
     const unsigned int depth = i < tau0 ? k0 : k1;
     if (start >= col_idx + depth) {
       col_idx += depth;
       continue;
+    }
+    if (col_idx >= start + len) {
+      break;
     }
     uint8_t delta[MAX_DEPTH];
     ChalDec(chall3, i, k0, tau0, k1, tau1, delta);
@@ -163,15 +167,10 @@ static inline void apply_correction_values_column(vbb_t* vbb, unsigned int start
           vbb->vole_cache + (col_idx - start) * ell_hat_bytes, delta[d], ell_hat_bytes);
 
       if (col_idx + 1 >= start + len) {
-        col_idx++;
-        break;
+        return;
       }
     }
-    if (col_idx >= start + len) {
-      break;
-    }
   }
-  vbb->cache_idx = start;
 }
 
 static void setup_pdec_com(vbb_t* vbb, const uint8_t** pdec, const uint8_t** com) {

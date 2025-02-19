@@ -7,12 +7,23 @@
 #define XKCP_has_KeccakP1600times4
 #define XKCP_has_MaskedKeccakP1600
 
+#define MASK_SIGN
+
+#ifdef MASK_SIGN
+#define MASKING
+#define CONFIG_MASK_SEL
+#else
+#undef MASKING
+#define CONFIG_MASK_NONE
+#endif
+
+
 /* Configurations used in the paper. */
 //#define CONFIG_MASK_NONE         // No Keccak masking.
 //#define CONFIG_SNI_SECURE        // Refresh AND inputs/output and Keccak result, "All-SNI" in the paper.
 //#define CONFIG_DOM_SECURE        // Randomize ANDs using Domain-Oriented Masking, "All-DOM" in the paper.
 //#define CONFIG_IND_SECURE        // Mask all calls to Keccak using independent values, "All-IND" in the paper.
-#define CONFIG_MASK_SEL            // Selective masking with independent values.
+//#define CONFIG_MASK_SEL            // Selective masking with independent values.
 //#define CONFIG_SEL_HALF          // Selective half-masking with independent values.
 //#define CONFIG_LEAK_TEST         // Reduced version for running leakage test.
 //#define CONFIG_TEST_VECTORS      // Compatible with known-answer tests.

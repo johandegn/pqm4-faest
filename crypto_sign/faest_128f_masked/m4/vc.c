@@ -242,9 +242,10 @@ void extract_sd_com_rec(vec_com_rec_t* vec_com_rec, const uint8_t* iv, uint32_t 
   uint8_t* b = vec_com_rec->b;
 
   // Find first known node on path
-  size_t j = 0;
-  for (; j < depth; j++) {
-    uint8_t left_node_known = b[depth - j - 1];
+  size_t i = 0;
+  for (; i < depth; i++) {
+    uint8_t left_node_known = b[depth - i - 1];
+
     center = (hi - lo) / 2 + lo;
     if (index <= center) { // Left
       hi = center;
@@ -258,34 +259,41 @@ void extract_sd_com_rec(vec_com_rec_t* vec_com_rec, const uint8_t* iv, uint32_t 
       }
     }
   }
-  j += 1;
+  uint8_t* node = vec_com_rec->nodes + lambda_bytes * i;
+  ++i;
 
-  // Find starting point from path memory
-  size_t i = 0;
+  size_t j = 0;
+  // Continue in path memory
   unsigned int path_index = vec_com_rec->path.index;
-  bool path_index_outside_search = (path_index > hi) || (path_index < lo);
   uint8_t* path_nodes     = vec_com_rec->path.nodes;
-  if (path_nodes != NULL && !vec_com_rec->path.empty && !path_index_outside_search) {
-    for (; i < depth; i++) {
+  if (path_nodes != NULL && !vec_com_rec->path.empty && path_index <= hi && path_index >= lo) {
+    for (; i < depth;) {
+      i++;
+      j++;
       center = (hi - lo) / 2 + lo;
       if (index <= center) { // Left
+        hi = center;
         if (path_index > center)
           break;
-        hi = center;
       } else { // Right
+        lo = center + 1;
         if (path_index < center + 1)
           break;
-        lo = center + 1;
       }
     }
   }
-  
+
   // Set starting node
-  uint8_t* node = (i > 0) ? node = path_nodes + (i - 1) * lambda_bytes
-                          : vec_com_rec->nodes + (j - 1) * lambda_bytes;
+  if (j > 0) {
+    node = path_nodes + (j - 1) * lambda_bytes * 2;
+    // if last node was right child
+    if (hi != center) {
+      node += lambda_bytes;
+    }
+  }
 
   // Continue computing until leaf is reached
-  for (; j < depth; j++, i++) {
+  for (; i < depth; i++, j++) {
     prg(node, iv, children, lambda, lambda_bytes * 2);
 
     center = (hi - lo) / 2 + lo;
@@ -296,12 +304,15 @@ void extract_sd_com_rec(vec_com_rec_t* vec_com_rec, const uint8_t* iv, uint32_t 
       node = r_child;
       lo   = center + 1;
     }
-    if (path_nodes != NULL)
-      memcpy(path_nodes + i * lambda_bytes, node, lambda_bytes);
+    if (path_nodes != NULL) {
+      memcpy(path_nodes + j * lambda_bytes * 2, children, lambda_bytes * 2);
+    }
   }
 
-  vec_com_rec->path.index = index;
+  if (path_nodes != NULL) {
+    vec_com_rec->path.index = index;
+    vec_com_rec->path.empty = false;
+  }
 
   H0(node, lambda, iv, sd, com);
-  //free(children);
 }

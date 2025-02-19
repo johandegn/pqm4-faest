@@ -197,7 +197,9 @@ ATTR_CONST ATTR_ALWAYS_INLINE static inline bf128_t bf128_one(void) {
 }
 
 ATTR_PURE bf128_t bf128_byte_combine(const bf128_t* x);
+ATTR_PURE bf128_t bf128_byte_combine_sclf(const bf128_t* x);
 ATTR_PURE bf128_t bf128_byte_combine_bits(uint8_t x);
+ATTR_PURE bf128_t bf128_byte_combine_bits_sclf(uint8_t x);
 bf128_t bf128_rand(void);
 
 #if defined(HAVE_ATTR_VECTOR_SIZE)
@@ -212,6 +214,7 @@ ATTR_CONST static inline bf128_t bf128_add(bf128_t lhs, bf128_t rhs) {
 #endif
 
 bf128_t bf128_mul(bf128_t lhs, bf128_t rhs);
+bf128_t bf128_mul_sclf(bf128_t lhs, bf128_t rhs);
 void bf128_mul_wrapper(bf128_t *out, const bf128_t *lhs, const bf128_t *rhs);
 void bf128_add_wrapper(bf128_t *out, const bf128_t *lhs, const bf128_t *rhs);
 ATTR_CONST bf128_t bf128_mul_64(bf128_t lhs, bf64_t rhs);
@@ -223,6 +226,7 @@ ATTR_CONST bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs);
 #endif
 */
 ATTR_CONST bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs);
+ATTR_CONST bf128_t bf128_mul_bit_sclf(bf128_t lhs, uint8_t rhs);
 ATTR_PURE bf128_t bf128_sum_poly(const bf128_t* xs);
 
 // GF(2^192) implemenation

@@ -1,6 +1,8 @@
 .syntax unified
 .thumb
 
+#include "config.h"
+#if defined(MASKING)
 .global aes_increment_iv
 aes_increment_iv:
     push    {r4, lr}
@@ -31,6 +33,7 @@ aes_increment_iv:
     str     r1, [r4], #4
     str     r0, [r4]
     pop     {r4, pc}
+#endif
 
 .global aes_extend_witness_masked_output
 aes_extend_witness_masked_output:
@@ -188,30 +191,30 @@ mc_loop:
     ldrb    r7, [r4, #0]
     movs    r1, #2
     mov     r0, r7
-    bl      bf8_mul
+    bl      bf8_mul_asm
     ldrb    fp, [r4, #1]
     str     r0, [sp, #8]
     movs    r1, #3
     mov     r0, fp
-    bl      bf8_mul
+    bl      bf8_mul_asm
     movs    r1, #2
     mov     sl, r0
     mov     r0, fp
-    bl      bf8_mul
+    bl      bf8_mul_asm
     ldrb    r9, [r4, #2]
     ldrb    r8, [r4, #3]
     mov     r3, r0
     movs    r1, #3
     mov     r0, r9
     str     r3, [sp, #4]
-    bl      bf8_mul
+    bl      bf8_mul_asm
     movs    r6, #0
     mov     ip, r0
     movs    r1, #2
     mov     r0, r9
     str     ip, [sp]
     mov     r5, r6
-    bl      bf8_mul
+    bl      bf8_mul_asm
     bfi     r6, r9, #0, #8
     bfi     r6, r7, #8, #8
     bfi     r5, r8, #0, #8
@@ -222,12 +225,12 @@ mc_loop:
     movs    r1, #3
     mov     fp, r0
     mov     r0, r8
-    bl      bf8_mul
+    bl      bf8_mul_asm
     bfi     r5, r9, #24, #8
     movs    r1, #3
     mov     r9, r0
     mov     r0, r7
-    bl      bf8_mul
+    bl      bf8_mul_asm
     ldr     r2, [sp, #8]
     ldr     r3, [sp, #4]
     movs    r7, #0
@@ -238,7 +241,7 @@ mc_loop:
     movs    r1, #2
     mov     r0, r8
     bfi     r7, ip, #24, #8
-    bl      bf8_mul
+    bl      bf8_mul_asm
     ldr     r2, [sp, #0]
     movs    r3, #0
     bfi     r3, sl, #0, #8
@@ -505,58 +508,3 @@ ekm_exit:
     mov     sl, #0
     add     sp, #16
     ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
-
-/*
-.global bf8_inv_masked
-bf8_inv_masked:
-    stmdb   sp!, {r4, r5, r6, r7, r8, lr}
-    sub     sp, #8
-    mov     r6, r2
-    mov     r5, r3
-    mov     r8, r0
-    mov     r7, r1
-    bl      bf64_rand
-    ldr     r3, =0x80808081
-    adds    r4, r0, r1
-    adc     r4, r4, #0
-    umull   r3, ip, r3, r4
-    mov     ip, ip, lsr #7
-    rsb     ip, ip, ip, lsl #8
-    sub     r4, r4, ip
-    adds    r4, #1
-    uxtb    r4, r4
-    ldrb    r0, [r8]
-    mov     r1, r4
-    bl      bf8_mul
-    ldrb    r1, [r7, #0]
-    mov     r8, r0
-    mov     r0, r4
-    bl      bf8_mul
-    eor     r0, r8, r0
-    uxtb    r0, r0
-    bl      bf8_inv
-    movs    r3, #0
-    mov     r7, r0
-    movs    r1, #1
-    add     r0, sp, #7
-    strb    r3, [sp, #7]
-    bl      rand_mask
-    ldrb    r8, [sp, #7]
-    eor     r0, r8, r7
-    mov     r1, r4
-    uxtb    r0, r0
-    bl      bf8_mul
-    mov     r1, r8
-    strb    r6, [r6, #0]                // CLEAR
-    strb    r0, [r6, #0]
-    mov     r0, r4
-    bl      bf8_mul
-    strb    r5, [r5, #0]                // CLEAR
-    strb    r0, [r5, #0]
-    // CLEAR STACK
-    mov     r1, #0
-    str     r1, [sp]
-    str     r1, [sp, #4]
-    add     sp, #8
-    ldmia   sp!, {r4, r5, r6, r7, r8, pc}
- */

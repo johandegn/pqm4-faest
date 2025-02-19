@@ -1,50 +1,32 @@
 .syntax unified
 .thumb
 
+.section .data
+pipeline_clear:
+    .word 0x01020304
+
+.section .text
 .global compute_sbox_masked
 compute_sbox_masked:
     push    {r4, r5, r6, lr}
     mov     r5, r0
     mov     r4, r1
     bl      bf8_inv_masked
-
-    // CLEAR temp registers and ldr-str pipeline
+    ldrb    r6, [sp, #8]
     ldr     r6, [sp, #8]
     mov     r0, #0
     mov     r1, #0 
-    mov     r2, #0
+    eor     r1, r0, r0
     mov     r3, #0
-    str     r6, [sp, #8]
-
-    ldrb    r0, [r5, #0]
-    bl      affine_incomplete
-    strb    r0, [r5, #0]
-
-    // CLEAR temp registers and ldr-str pipeline
-    ldr     r6, [sp, #8]
-    mov     r0, #0
-    mov     r1, #0 
     mov     r2, #0
-    mov     r3, #0
-    str     r6, [sp, #8]
-
-    ldrb    r0, [r4, #0]
-    bl      affine
-    strb    r0, [r4, #0]
-
-    // CLEAR temp registers and ldr-str pipeline
-    ldr     r6, [sp, #8]
-    mov     r0, #0
-    mov     r1, #0 
-    mov     r2, #0
-    mov     r3, #0
+    strb    r6, [sp, #8]
     str     r6, [sp, #8]
     mov     r4, #0
     mov     r5, #0
     mov     r6, #0
-
     pop     {r4, r5, r6, pc}
 
+.global bf8_mul_asm
 bf8_mul_asm:
     // Input arguments:
     // r0 = a, r1 = b
@@ -55,6 +37,7 @@ bf8_mul_asm:
     mov     r2, #0
     mov     r3, #1
     mov     ip, #0
+    eor     ip, r2, r2              // CLEAR
 
     // Iterate over bits of b
     // bit 0
@@ -127,64 +110,12 @@ bf8_mul_asm:
     eor     r0, r0, r3, lsl #3
     eor     r0, r0, r3, lsl #4
 
+    uxtb    r0, r0
     mov     r1, #0                  // CLEAR
     mov     r2, #0                  // CLEAR
     mov     r3, #0                  // CLEAR
+    eor     ip, r2, r2              // CLEAR
     bx      lr
-
-bf8_shift_reduce:
-    // Input arguments:
-    // r0 = x
-    // r1 = shift
-
-    lsl     r2, r0, r1
-
-    // Field reduction
-    mov     r0, r2
-    mov     r1, r2, lsr #8
-    eor     r0, r0, r1
-    eor     r0, r0, r1, lsl #1
-    eor     r0, r0, r1, lsl #3
-    eor     r0, r0, r1, lsl #4
-
-    eor     r3, r3, r1, lsr #7
-    eor     r3, r3, r1, lsr #5
-    eor     r3, r3, r1, lsr #4
-    
-    eor     r0, r0, r3
-    eor     r0, r0, r3, lsl #1
-    eor     r0, r0, r3, lsl #3
-    eor     r0, r0, r3, lsl #4
-
-    uxtb    r0, r0
-    bx      lr
-
-bf8_inv_asm:
-    // Computing x^(-1) = x^(255)
-    // Doing it by following order
-    // 1 - 7 - 15 - 30 - 60 - 120 - 127 - 254 - 255
-    // Input arguments:
-    // r0 = x
-    push    {lr}
-
-    mov     r1, #7
-    bl      bf8_shift_reduce
-    mov     r1, #8
-    bl      bf8_shift_reduce
-    mov     r1, r0
-    bl      bf8_mul_asm
-    mov     r1, r0
-    bl      bf8_mul_asm
-    mov     r1, r0
-    bl      bf8_mul_asm
-    mov     r1, #7
-    bl      bf8_shift_reduce
-    mov     r1, r0
-    bl      bf8_mul_asm
-    mov     r1, #1
-    bl      bf8_shift_reduce
-
-    pop     {pc}
 
 .global bf8_inv_masked
 bf8_inv_masked:
@@ -257,19 +188,29 @@ bf8_inv_masked:
     mov     r0, r4
     mov     r1, r10
     bl      bf8_mul_asm
+    bl      affine_incomplete
+    eor     r0, r0, #0x63
     mov     r11, r0
     mov     r0, #0          // CLEAR
     // Note that the bf8_mul_asm, cleans all registers it touched
     // and does not use the stack, hence we assume we are clean after
     // the return, except for the return value in r0
-
-
+// 1544
     // a * r
     ldrb    r0, [r5, #0]
     mov     r1, r4
     bl      bf8_mul_asm
     mov     r7, r0
     mov     r0, #0          // CLEAR
+
+    // ####
+    // Clear SRAM1 buffers
+    ldr     r0, =pipeline_clear
+    ldr     r1, [r0, #0]
+    str     r1, [r0, #0]
+    // Clear SRAM2 buffers
+    ldr     r0, = 0x2001fff8
+    ldr     r1, [r0, #0]
 
     // ####
     // Memory pipeline cleaning
@@ -281,14 +222,23 @@ bf8_inv_masked:
     // in some way. To ensure value is left, the pipeline is filled with 0's and
     // the stack pointer.
     // ####
-// 456
+// 1916
     // b * r
     ldrb    r0, [r6, #0]
     mov     r1, r4
     bl      bf8_mul_asm
     mov     r8, r0
     mov     r0, #0          // CLEAR
-// 523
+
+    // ####
+    // Clear SRAM1 buffers
+    ldr     r0, =pipeline_clear
+    ldr     r1, [r0, #0]
+    str     r1, [r0, #0]
+    // Clear SRAM2 buffers
+    ldr     r0, = 0x2001fff8
+    ldr     r1, [r0, #0]
+
     // ####
     // Memory pipeline cleaning
     ldrb    r0, [sp, #4]
@@ -299,12 +249,10 @@ bf8_inv_masked:
 
     // Inverse
     // Inv + r1
-// 528
     eor     r0, r8, r7
     uxtb    r0, r0
     bl      bf8_inv
     eor     r0, r0, r10
-// 540    
     // Note the the instruction would not require clearning next to eachother
     // as the values is masked by the product with r1.
     // However as the inverse is a table lookup, the memory pipeline must be cleaned
@@ -317,18 +265,37 @@ bf8_inv_masked:
     // ####
 
     // ####
+    // Clear SRAM1 buffers
+    ldr     r1, =pipeline_clear
+    ldr     r2, [r1, #0]
+    str     r2, [r1, #0]
+    // Clear SRAM2 buffers
+    ldr     r1, = 0x2001fff8
+    ldr     r2, [r1, #0]
+
+    // ####
     // Memory pipeline cleaning
     ldrb    r2, [sp, #4]
     ldr     r1, [sp, #4]
     strb    r1, [sp, #4]
     str     r2, [sp, #4]
     // ####
-// 548
+
     // (Inv + r1) * r
     mov     r1, r4
     bl      bf8_mul_asm
+    bl      affine_incomplete
     strb    r0, [r5, #0]
     mov     r0, #0          // CLEAR
+
+    // ####
+    // Clear SRAM1 buffers
+    ldr     r0, =pipeline_clear
+    ldr     r1, [r0, #0]
+    str     r1, [r0, #0]
+    // Clear SRAM2 buffers
+    ldr     r0, = 0x2001fff8
+    ldr     r1, [r0, #0]
 
     // ####
     // Memory pipeline cleaning
@@ -340,6 +307,15 @@ bf8_inv_masked:
 
     strb    r11, [r6, #0]
     mov     r11, #0         // CLEAR
+
+    // ####
+    // Clear SRAM1 buffers
+    ldr     r0, =pipeline_clear
+    ldr     r1, [r0, #0]
+    str     r1, [r0, #0]
+    // Clear SRAM2 buffers
+    ldr     r0, = 0x2001fff8
+    ldr     r1, [r0, #0]
 
     // ####
     // Memory pipeline cleaning

@@ -279,11 +279,11 @@ aes_enc_forward_backward_128_share:
 aes_enc_forward_backward_128_l9:
     movs    r1, #2
     add     r0, sp, #160    @ 0xa0
-    bl      bf128_byte_combine_bits
+    bl      bf128_byte_combine_bits_sclf
     adds    r7, #1
     movs    r1, #3
     add     r0, sp, #176    @ 0xb0
-    bl      bf128_byte_combine_bits
+    bl      bf128_byte_combine_bits_sclf
     ldr     r2, [sp, #28]
     ldr     r6, [sp, #812]  @ 0x32c
     ldr     r8, [sp, #32]
@@ -339,7 +339,7 @@ aes_enc_forward_backward_128_l3:
     mov     r1, r9
     adds    r4, r3, r4
     lsls    r5, r7, #4
-    bl      bf128_byte_combine
+    bl      bf128_byte_combine_sclf
     ldr     r2, [sp, #24]
     mov     r3, r6
     add     r0, sl, r5
@@ -427,7 +427,7 @@ aes_enc_forward_backward_128_l4:
     str     r3, [sp, #676]  @ 0x2a4
     mov     r1, fp
     mov     r0, r4
-    bl      bf128_byte_combine
+    bl      bf128_byte_combine_sclf
     ldr     r3, [sp, #24]
     adds    r3, #8
     str     r3, [sp, #24]
@@ -450,7 +450,7 @@ aes_enc_forward_backward_128_l4:
     add     r2, sp, #384    @ 0x180
     ldmia   r2, {r2, r3}
     add     r0, sp, #256    @ 0x100
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldr     r3, [sl, #8]
     ldr     r2, [sp, #264]  @ 0x108
     str     r5, [sp, #28]
@@ -477,7 +477,7 @@ aes_enc_forward_backward_128_l4:
     add     r2, sp, #400    @ 0x190
     ldmia   r2, {r2, r3}
     add     r0, sp, #272    @ 0x110
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldrd    r7, lr, [sp, #416]      @ 0x1a0
     ldrd    r2, r4, [sp, #424]      @ 0x1a8
     ldr     r3, [sp, #272]  @ 0x110
@@ -547,7 +547,7 @@ aes_enc_forward_backward_128_l4:
     mov     r0, r1
     add     r1, sp, #400    @ 0x190
     ldmia   r1, {r2, r3}
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldrd    r0, r1, [r6, #24]
     ldr     r2, [sp, #296]  @ 0x128
     ldr     r3, [r6, #16]
@@ -573,7 +573,7 @@ aes_enc_forward_backward_128_l4:
     add     r3, sp, #416    @ 0x1a0
     ldmia   r3, {r2, r3}
     add     r0, sp, #304    @ 0x130
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldr     r1, [sp, #312]  @ 0x138
     ldr     r3, [sp, #36]   @ 0x24
     ldr     r2, [r6, #28]
@@ -640,7 +640,7 @@ aes_enc_forward_backward_128_l4:
     add     lr, sp, #416    @ 0x1a0
     ldmia   lr, {r2, r3}
     add     r0, sp, #320    @ 0x140
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldrd    r4, r1, [r6, #36]       @ 0x24
     ldr     r0, [sp, #328]  @ 0x148
     ldr     r2, [r6, #44]   @ 0x2c
@@ -666,7 +666,7 @@ aes_enc_forward_backward_128_l4:
     add     lr, sp, #432    @ 0x1b0
     ldmia   lr, {r2, r3}
     add     r0, sp, #336    @ 0x150
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldrd    r3, r0, [r6, #36]       @ 0x24
     ldr     r4, [sp, #344]  @ 0x158
     ldr     r1, [r6, #44]   @ 0x2c
@@ -692,7 +692,7 @@ aes_enc_forward_backward_128_l4:
     add     ip, sp, #384    @ 0x180
     ldmia   ip, {r2, r3}
     add     r0, sp, #352    @ 0x160
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldr     r1, [sl, #60]   @ 0x3c
     ldr     r2, [sp, #36]   @ 0x24
     ldr     r4, [sp, #24]
@@ -725,7 +725,7 @@ aes_enc_forward_backward_128_l4:
     add     r2, sp, #432    @ 0x1b0
     ldmia   r2, {r2, r3}
     add     r0, sp, #368    @ 0x170
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldrd    r0, r1, [r6, #56]       @ 0x38
     ldr     r3, [sp, #376]  @ 0x178
     ldr     r2, [sp, #76]   @ 0x4c
@@ -771,7 +771,7 @@ aes_enc_forward_backward_128_l7:
     bne     aes_enc_forward_backward_128_l7
     mov     r1, fp
     mov     r0, sl
-    bl      bf128_byte_combine
+    bl      bf128_byte_combine_sclf
     ldr     r4, [sp, #24]
     ldr     r3, [sp, #824]  @ 0x338
     ldr     r1, [sp, #32]
@@ -944,7 +944,7 @@ aes_enc_forward_backward_128_l11:
     eors    r3, r4
     mov     r1, fp
     str     r3, [sp, #676]  @ 0x2a4
-    bl      bf128_byte_combine
+    bl      bf128_byte_combine_sclf
     ldmia   r6, {r0, r1, r2, r3}
     ldr     r4, [sp, #24]
     ldr     r6, [sp, #28]

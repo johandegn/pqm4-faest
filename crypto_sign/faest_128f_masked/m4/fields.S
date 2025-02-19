@@ -10,53 +10,8 @@
     .endr
 .endm
 
-.global bf8_mul
-bf8_mul:
-    push    {lr}
-    lsrs    r3, r1, #7
-    add     r3, r3, r3, lsl #1
-    add     r3, r3, r3, lsl #3
-    sub     sp, #12
-    eor     r3, r3, r1, lsl #1
-    mov     r2, r1
-    uxtb    r3, r3
-    strb    r2, [sp, #5]
-    strb    r3, [sp, #6]
-    eors    r2, r3
-    add     r3, sp, #8
-    movs    r1, #0
-    add     r3, r3, r0, lsr #6
-    strb    r1, [sp, #4]
-    strb    r2, [sp, #7]
-    ldrb    r2, [r3, #-4]
-    mov     ip, #4
- bf8_mul_loop:
-    asr     r3, r0, ip
-    and     r3, r3, #3
-    add     r3, sp
-    mov     lr, r2, asr #6
-    ldrb    r3, [r3, #4]
-    sub     ip, ip, #2
-    orr     r1, lr, r1, lsl #2
-    eor     r2, r3, r2, lsl #2
-    cmn     ip, #2
-    uxtb    r1, r1
-    uxtb    r2, r2
-    bne     bf8_mul_loop
-    mov     r0, sp
-    strb    r2, [sp]
-    strb    r1, [sp, #1]
-    bl      bf8_reduce
-    // CLEAR STACK
-    mov     r1, #0
-    str     r1, [sp]
-    str     r1, [sp, #4]
-    str     r1, [sp, #8]
-    add     sp, #12
-    ldr     pc, [sp], #4
-
-.global bf128_mul
-bf128_mul:
+.global bf128_mul_sclf
+bf128_mul_sclf:
     sub     sp, #8
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     sub     sp, #300        @ 0x12c
@@ -325,7 +280,7 @@ bf128_mul_wrapper:
     strd    r6, r7, [r4, #8]
     strd    r6, r7, [r4]
 
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldmia   r5, {r0, r1, r2, r3}
     stmia   r4, {r0, r1, r2, r3}
 
@@ -337,8 +292,8 @@ bf128_mul_wrapper:
     add     sp, #44 @ 0x2c
     pop     {r4, r5, r6, r7, pc}
 
-.global bf128_byte_combine
-bf128_byte_combine:
+.global bf128_byte_combine_sclf
+bf128_byte_combine_sclf:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     ldrd    fp, sl, [r1]
     sub     sp, #68 @ 0x44
@@ -360,7 +315,7 @@ bf128_byte_combine_loop:
     stmia   sp, {r0, r1}
     add     r0, sp, #48     @ 0x30
     ldmia   r4, {r2, r3}
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldrd    r2, r3, [sp, #48]       @ 0x30
     adds    r7, #1
     eor     fp, r2, fp
@@ -417,7 +372,7 @@ bf128_byte_combine_vk_share_loop:
     stmia   sp, {r0, r1}
     add     r0, sp, #56     @ 0x38
     ldmia   r4, {r2, r3}
-    bl      bf128_mul
+    bl      bf128_mul_sclf
     ldr     r3, [sp, #56]   @ 0x38
     eor     sl, sl, r3
     ldr     r3, [sp, #60]   @ 0x3c
@@ -437,8 +392,8 @@ bf128_byte_combine_vk_share_loop:
     add     sp, #76 @ 0x4c
     ldmia   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
-.global bf128_mul_bit
-bf128_mul_bit:
+.global bf128_mul_bit_sclf
+bf128_mul_bit_sclf:
     sub     sp, #8
     push    {r4}
     add     r1, sp, #4
@@ -468,8 +423,8 @@ bf128_mul_bit:
     add     sp, #8
     bx      lr
 
-.global bf128_byte_combine_bits
-bf128_byte_combine_bits:
+.global bf128_byte_combine_bits_sclf
+bf128_byte_combine_bits_sclf:
     stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
     sub     sp, #60 @ 0x3c
     movs    r6, #0

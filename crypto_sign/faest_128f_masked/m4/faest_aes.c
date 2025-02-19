@@ -77,54 +77,6 @@ static const bf8_t Rcon[30] = {
     0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91,
 };
 
-bf128_t* column_to_row_major_and_shrink_V_128(uint8_t** v, unsigned int ell) {
-  // V is \hat \ell times \lambda matrix over F_2
-  // v has \hat \ell rows, \lambda columns, storing in column-major order, new_v has \ell + \lambda
-  // rows and \lambda columns storing in row-major order
-  bf128_t* new_v = faest_aligned_alloc(BF128_ALIGN, (ell + FAEST_128F_LAMBDA) * sizeof(bf128_t));
-  for (unsigned int row = 0; row != ell + FAEST_128F_LAMBDA; ++row) {
-    uint8_t new_row[BF128_NUM_BYTES] = {0};
-    for (unsigned int column = 0; column != FAEST_128F_LAMBDA; ++column) {
-      ptr_set_bit(new_row, ptr_get_bit(v[column], row), column);
-    }
-    new_v[row] = bf128_load(new_row);
-  }
-
-  return new_v;
-}
-
-bf192_t* column_to_row_major_and_shrink_V_192(uint8_t** v, unsigned int ell) {
-  // V is \hat \ell times \lambda matrix over F_2
-  // v has \hat \ell rows, \lambda columns, storing in column-major order, new_v has \ell + \lambda
-  // rows and \lambda columns storing in row-major order
-  bf192_t* new_v = faest_aligned_alloc(BF192_ALIGN, (ell + FAEST_192F_LAMBDA) * sizeof(bf192_t));
-  for (unsigned int row = 0; row != ell + FAEST_192F_LAMBDA; ++row) {
-    uint8_t new_row[BF192_NUM_BYTES] = {0};
-    for (unsigned int column = 0; column != FAEST_192F_LAMBDA; ++column) {
-      ptr_set_bit(new_row, ptr_get_bit(v[column], row), column);
-    }
-    new_v[row] = bf192_load(new_row);
-  }
-
-  return new_v;
-}
-
-bf256_t* column_to_row_major_and_shrink_V_256(uint8_t** v, unsigned int ell) {
-  // V is \hat \ell times \lambda matrix over F_2
-  // v has \hat \ell rows, \lambda columns, storing in column-major order, new_v has \ell + \lambda
-  // rows and \lambda columns storing in row-major order
-  bf256_t* new_v = faest_aligned_alloc(BF256_ALIGN, (ell + FAEST_256F_LAMBDA) * sizeof(bf256_t));
-  for (unsigned int row = 0; row != ell + FAEST_256F_LAMBDA; ++row) {
-    uint8_t new_row[BF256_NUM_BYTES] = {0};
-    for (unsigned int column = 0; column != FAEST_256F_LAMBDA; ++column) {
-      ptr_set_bit(new_row, ptr_get_bit(v[column], row), column);
-    }
-    new_v[row] = bf256_load(new_row);
-  }
-
-  return new_v;
-}
-
 // m == 1 implementations
 
 static void aes_key_schedule_forward_1(const uint8_t* x, uint8_t* out,
