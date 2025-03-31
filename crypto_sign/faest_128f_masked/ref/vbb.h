@@ -41,6 +41,7 @@ struct vbb_t {
   uint8_t* v_mask_cache;
   uint8_t* vk_mask_cache;
   uint8_t* u_mask_cache;
+  unsigned int v_buf_size;
 };
 
 // Signer

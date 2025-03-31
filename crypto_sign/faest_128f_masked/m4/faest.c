@@ -320,10 +320,12 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* 
 
   vbb_t vbb;
   const unsigned int len = ell_hat;
+  const unsigned int v_buf_size = 16;
+  vbb.v_buf_size = v_buf_size;
   uint8_t* hcom          = alloca(MAX_LAMBDA_BYTES * 2);
   uint8_t* u             = alloca(ell_hat / 8);
   uint8_t* v_cache       = alloca(len * lambdaBytes);
-  uint8_t* v_buf         = alloca(lambdaBytes);
+  uint8_t* v_buf         = alloca(lambdaBytes * v_buf_size);
   uint8_t* vk_buf        = NULL;
   uint8_t* vk_cache      = NULL;
   if (!(params->faest_paramid > 6)) {
@@ -490,10 +492,12 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
 
   vbb_t vbb;
   const unsigned int len = ell_hat;
+  const unsigned int v_buf_size = 16;
+  vbb.v_buf_size = v_buf_size;
   uint8_t* hcom          = alloca(MAX_LAMBDA_BYTES * 2);
   uint8_t* q_cache       = alloca(len * lambdaBytes);
   uint8_t* Dtilde_buf    = alloca(lambdaBytes + UNIVERSAL_HASH_B);
-  uint8_t* v_buf         = alloca(lambdaBytes);
+  uint8_t* v_buf         = alloca(lambdaBytes * v_buf_size);
   uint8_t* vk_buf        = NULL;
   uint8_t* vk_cache      = NULL;    
   if (!(params->faest_paramid > 6)) {

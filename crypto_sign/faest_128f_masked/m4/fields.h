@@ -226,7 +226,6 @@ ATTR_CONST bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs);
 #endif
 */
 ATTR_CONST bf128_t bf128_mul_bit(bf128_t lhs, uint8_t rhs);
-ATTR_CONST bf128_t bf128_mul_bit_sclf(bf128_t lhs, uint8_t rhs);
 ATTR_PURE bf128_t bf128_sum_poly(const bf128_t* xs);
 
 // GF(2^192) implemenation

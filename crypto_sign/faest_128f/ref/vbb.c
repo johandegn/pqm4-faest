@@ -274,8 +274,8 @@ static void apply_correction_values_row(vbb_t* vbb, unsigned int start, unsigned
     }
 
   }
-  free(c_trunc);
-  free(c_trunc_mask);
+  //free(c_trunc);
+  //free(c_trunc_mask);
 
   vbb->cache_idx = start;
 }
@@ -356,8 +356,8 @@ static void apply_witness_values_row(vbb_t* vbb, unsigned int start, unsigned in
       col_idx++;
     }
   }
-  free(d_trunc);
-  free(d_trunc_mask);
+  //free(d_trunc);
+  //free(d_trunc_mask);
 }
 
 static void apply_witness_values_column(vbb_t* vbb) {
@@ -385,7 +385,6 @@ static void apply_witness_values_column(vbb_t* vbb) {
     }
   }
 }
-
 static void recompute_vole_row_reconstruct(vbb_t* vbb, unsigned int start, unsigned int len) {
   const unsigned int lambda  = vbb->params->faest_param.lambda;
   const unsigned int ell     = vbb->params->faest_param.l;

@@ -380,7 +380,7 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
   const unsigned int ell_hat     = l + lambda * 2 + UNIVERSAL_HASH_B_BITS;
 
   vbb_t vbb;
-  const unsigned int len = ell_hat;
+  const unsigned int len = 16;
   uint8_t* hcom          = alloca(MAX_LAMBDA_BYTES * 2);
   uint8_t* q_cache       = alloca(len * lambdaBytes);
   uint8_t* Dtilde_buf    = alloca(lambdaBytes + UNIVERSAL_HASH_B);

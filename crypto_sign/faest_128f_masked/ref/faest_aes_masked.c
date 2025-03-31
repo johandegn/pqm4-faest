@@ -4,6 +4,7 @@
 #include "universal_hashing.h"
 #include "utils.h"
 #include "parameters.h"
+#include "shuffle.h"
 
 static const bf8_t Rcon[30] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,
@@ -153,25 +154,51 @@ static void aes_key_schedule_128_masked(const uint8_t* w_share, vbb_t* vbb,
     bf128_t bf_w_dash_hat_share[2][4] = {0};
     bf128_t bf_v_w_dash_hat_share[2][4] = {0};
 
+
+    // Share 0
     aes_key_schedule_backward_1_round_share(w_share + FAEST_128F_LAMBDA / 8, k, &w_dash[0][0], j, params, false);
     aes_key_schedule_backward_128_vbb_vk_round_share(vbb, 1, 0, NULL, &v_w_dash[0][0], j, 0);
-    for (unsigned int r = 0; r <= 3; r++) {
-      // Step: 10..11
-      bf_k_hat_share[0][(r + 3) % 4]   = bf128_byte_combine_bits(k[(96 + iwd*8 + 8 * r) / 8]);
-      bf_v_k_hat_share[0][(r + 3) % 4] = bf128_byte_combine_vk_share(vbb, (96 + iwd*8 + 8 * r), 0);
-      bf_w_dash_hat_share[0][r]        = bf128_byte_combine_bits(w_dash[0][(8 * r) / 8]);
-      bf_v_w_dash_hat_share[0][r]      = bf128_byte_combine(v_w_dash[0] + (8 * r));
+    
+    uint8_t decoy_in[9] = {0};
+    bf128_t decoy_out[9] = {0};
+    for (unsigned int i = 0; i < 9; i++){
+      decoy_in[i] = bf8_rand();
+      decoy_out[i] = bf128_zero();
     }
 
+    uint8_t permutation[4];
+    for(unsigned int i = 0; i < 4; i++){
+      permutation[i] = i;
+    }
+    shuffle_4(permutation);
+
+    for (unsigned int i = 0; i <= 3; i++) {
+      uint8_t r = permutation[i];
+      
+      bf_v_k_hat_share[0][(r + 3) % 4] = bf128_byte_combine_vk_share(vbb, (96 + iwd*8 + 8 * r), 0);
+      bf_v_w_dash_hat_share[0][r]      = bf128_byte_combine(v_w_dash[0] + (8 * r));
+
+      byte_combine_bits_shuffle_11(decoy_in, decoy_out, k + (96 + iwd*8 + 8 * r) / 8, w_dash[0] + (8 * r) / 8, bf_k_hat_share[0] + (r + 3) % 4, bf_w_dash_hat_share[0] + r);
+    }
+
+    // share 1
     aes_key_schedule_backward_1_round_share(w_share + FAEST_128F_LAMBDA / 8 + FAEST_128F_L/8, k + (FAEST_128F_R + 1) * 128 / 8, &w_dash[1][0], j, params, true);
     aes_key_schedule_backward_128_vbb_vk_round_share(vbb, 1, 0, NULL, &v_w_dash[1][0], j, 1);
-    for (unsigned int r = 0; r <= 3; r++) {
-      // Step: 10..11
-      bf_k_hat_share[1][(r + 3) % 4]   = bf128_byte_combine_bits((k + (FAEST_128F_R + 1) * 128 / 8)[(96 + iwd*8 + 8 * r) / 8]);
-      bf_v_k_hat_share[1][(r + 3) % 4] = bf128_byte_combine_vk_share(vbb, (96 + iwd*8 + 8 * r), 1);
-      bf_w_dash_hat_share[1][r]        = bf128_byte_combine_bits(w_dash[1][(8 * r) / 8]);
-      bf_v_w_dash_hat_share[1][r]      = bf128_byte_combine(v_w_dash[1] + (8 * r));
+
+    for (unsigned int i = 0; i < 9; i++){
+      decoy_in[i] = bf8_rand();
+      decoy_out[i] = bf128_zero();
     }
+    shuffle_4(permutation);
+    for (unsigned int i = 0; i <= 3; i++) {
+      uint8_t r = permutation[i];
+      bf_v_k_hat_share[1][(r + 3) % 4] = bf128_byte_combine_vk_share(vbb, (96 + iwd*8 + 8 * r), 1);
+      bf_v_w_dash_hat_share[1][r]      = bf128_byte_combine(v_w_dash[1] + (8 * r));
+
+      byte_combine_bits_shuffle_11(decoy_in, decoy_out, (k + (FAEST_128F_R + 1) * 128 / 8) +(96 + iwd*8 + 8 * r) / 8, w_dash[1]+ (8 * r) / 8, bf_k_hat_share[1]+(r + 3) % 4, bf_w_dash_hat_share[1] + r);
+    }
+
+    // hash the shares
     for (unsigned int r = 0; r <= 3; r++) {
       const bf128_t part_a = bf128_add(bf_v_k_hat_share[0][r], bf_k_hat_share[0][r]);
       const bf128_t part_b = bf128_add(bf_w_dash_hat_share[0][r], bf_v_w_dash_hat_share[0][r]);
@@ -198,9 +225,25 @@ static void aes_key_schedule_128_masked(const uint8_t* w_share, vbb_t* vbb,
 static void aes_enc_forward_128_1_round(const uint8_t* x, const uint8_t* xk, const uint8_t* in,
                                   bf128_t* bf_y, int round) {
   if (round == 0){
+    uint8_t decoy_in[4] = {0};
+    bf128_t decoy_out[4] = {0};
+    for (unsigned int i = 0; i < 4; i++){
+      decoy_in[i] = bf8_rand();
+      decoy_out[i] = bf128_zero();
+    }
+
+    uint8_t permutation[16];
+    for(unsigned int i = 0; i < 16; i++){
+      permutation[i] = i;
+    }
+    shuffle_16(permutation);
+
     for (unsigned int i = 0; i < 16; i++) {
-      const uint8_t xin = in[i];
-      bf_y[i] = bf128_add(bf128_byte_combine_bits(xin), bf128_byte_combine_bits(xk[i]));
+      bf128_t xin_field;
+      bf128_t xk_field;
+      byte_combine_bits_shuffle_6(decoy_in, decoy_out, in + permutation[i], xk + permutation[i], &xin_field, &xk_field);
+
+      bf_y[permutation[i]] = bf128_add(xin_field, xk_field);
     }
   }
 
@@ -215,10 +258,24 @@ static void aes_enc_forward_128_1_round(const uint8_t* x, const uint8_t* xk, con
 
       bf128_t bf_x_hat[4];
       bf128_t bf_xk_hat[4];
-      for (unsigned int r = 0; r <= 3; r++) {
-        // Step: 12..13
-        bf_x_hat[r]  = bf128_byte_combine_bits(x[(ix + 8 * r) / 8]);
-        bf_xk_hat[r] = bf128_byte_combine_bits(xk[(ik + 8 * r) / 8]);
+      
+      
+      uint8_t decoy_in[9] = {0};
+      bf128_t decoy_out[9] = {0};
+      for (unsigned int i = 0; i < 9; i++){
+        decoy_in[i] = bf8_rand();
+        decoy_out[i] = bf128_zero();
+      }
+
+      uint8_t permutation[4];
+      for(unsigned int i = 0; i < 4; i++){
+        permutation[i] = i;
+      }
+      shuffle_4(permutation);
+      for (unsigned int i = 0; i <= 3; i++) {
+        uint8_t r = permutation[i];
+
+        byte_combine_bits_shuffle_11(decoy_in, decoy_out, x + (ix + 8 * r) / 8, xk + (ik + 8 * r) / 8, bf_x_hat + r, bf_xk_hat + r);
       }
 
       // Step : 14
@@ -255,27 +312,44 @@ static void aes_enc_backward_128_1_round_share(const uint8_t* x, const uint8_t* 
   uint8_t xtilde;
   // Step:2..4
   unsigned int j = round;
-  for (unsigned int c = 0; c <= 3; c++) {
-    for (unsigned int r = 0; r <= 3; r++) {
-      // Step: 5..6
-      unsigned int ird = (128 * j) + (32 * ((c - r + 4) % 4)) + (8 * r);
-      if (j < (FAEST_128F_R - 1)) {
-        // Step: 7
-        xtilde = x[ird / 8];
-      } else {
-        // Step: 9..11 (bit spliced)
-        // -((1 ^ Mtag) & (1 ^ Mkey)) == 0xff
-        const uint8_t xout = out[(ird - 128 * (FAEST_128F_R - 1)) / 8];
-        xtilde             = xout ^ xk[(128 + ird) / 8];
-      }
 
-      // Step: 12..17 (bit spliced)
-      // set_bit((1 ^ Mtag) & (1 ^ Mkey), 0) ^ set_bit((1 ^ Mtag) & (1 ^ Mkey), 2) == 0x5
-      const uint8_t ytilde = rotr8(xtilde, 7) ^ rotr8(xtilde, 5) ^ rotr8(xtilde, 2) ^ (share * 0x5);
+  uint8_t decoy_in[4] = {0};
+  bf128_t decoy_out[4] = {0};
+  for (unsigned int i = 0; i < 4; i++){
+    decoy_in[i] = bf8_rand();
+    decoy_out[i] = bf128_zero();
+  }
 
-      // Step: 18
-      y_out[4 * c + r] = bf128_byte_combine_bits(ytilde);
+  uint8_t permutation[16];
+  for(unsigned int i = 0; i < 16; i++){
+    permutation[i] = i;
+  }
+  shuffle_16(permutation);
+
+  for (unsigned int i = 0; i < 16; i++){
+    unsigned int p = permutation[i];
+    unsigned int c = p / 4;
+    unsigned int r = p % 4;
+    // Step: 5..6
+    unsigned int ird = (128 * j) + (32 * ((c - r + 4) % 4)) + (8 * r);
+    if (j < (FAEST_128F_R - 1)) {
+      // Step: 7
+      xtilde = x[ird / 8];
+    } else {
+      // Step: 9..11 (bit spliced)
+      // -((1 ^ Mtag) & (1 ^ Mkey)) == 0xff
+      const uint8_t xout = out[(ird - 128 * (FAEST_128F_R - 1)) / 8];
+      xtilde             = xout ^ xk[(128 + ird) / 8];
     }
+
+    // Step: 12..17 (bit spliced)
+    // set_bit((1 ^ Mtag) & (1 ^ Mkey), 0) ^ set_bit((1 ^ Mtag) & (1 ^ Mkey), 2) == 0x5
+    const uint8_t ytilde = rotr8(xtilde, 7) ^ rotr8(xtilde, 5) ^ rotr8(xtilde, 2) ^ (share * 0x5);
+
+    uint8_t single_decoy_in = bf8_rand();
+    bf128_t single_decoy_out = bf128_zero();
+    byte_combine_bits_shuffle_6(decoy_in, decoy_out, &ytilde, &single_decoy_in, y_out+4*c+r, &single_decoy_out);
+
   }
 }
 

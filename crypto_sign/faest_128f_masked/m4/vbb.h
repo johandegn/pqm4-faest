@@ -41,6 +41,9 @@ struct vbb_t {
   uint8_t* v_mask_cache;
   uint8_t* vk_mask_cache;
   uint8_t* u_mask_cache;
+  unsigned int transpose_index_0;
+  unsigned int transpose_index_1;
+  unsigned int v_buf_size;
 };
 
 // Signer
@@ -88,5 +91,6 @@ const bf128_t* get_vk_128_share(vbb_t* vbb, unsigned int idx, unsigned int share
 const uint8_t* get_vole_u_share(vbb_t* vbb, unsigned int share);
 
 void add_vole_to_vk_cache_share(vbb_t* vbb, unsigned int idx, bf128_t* VOLE, unsigned int share);
-
+void transpose_vole_asm(uint8_t* vole_cache, uint8_t* v_buf, unsigned int idx);
+uint32_t sca_transpose(uint32_t a, uint32_t b, unsigned int mod_idx);
 #endif
