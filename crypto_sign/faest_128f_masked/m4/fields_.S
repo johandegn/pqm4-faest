@@ -24,7 +24,7 @@ bf128_byte_combine_bits_sclf:
 
     mov     r1, #16
     add     r0, sp, #20
-    //bl      rand_mask
+    bl      rand_mask
 
 
     // use r5-r8 as result registers
@@ -41,17 +41,13 @@ bf128_byte_combine_bits_sclf:
     // bit counter
     mov     r4, #1
 
+bit_loopr:
+    // Random mask for conditional move
     mov     r1, #4
     add     r0, sp, #36
-    //bl      rand_mask
+    bl      rand_mask
     ldr     r11, [sp, #36]
-    
-    //ldr     r11, =#0x5aa5a55a
 
-
-    @ Start looping at 1300 sample points
-
-bit_loopr:
     // load alpha onto stack
     add     r0, sp, #4
     sub     r1, r4, #1
@@ -177,6 +173,5 @@ bit_loopr:
     mov     r11, r1
     mov     r12, r1
 
-    //clear_stack 36
     add     sp, #40
     pop     {r4, r5, r6, r7, r8, r9, r10, r11, r12, pc}
