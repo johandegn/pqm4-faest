@@ -168,7 +168,9 @@ bf64_t bf64_mul(bf64_t a, bf64_t b) {
 
 // GF(2^128) implementation
 
-static const bf128_t bf128_alpha[7] = {
+static const bf128_t bf128_alpha[8] = {
+    BF128C(U64C(0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
+           U64C(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)),
     BF128C(U64C(0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1),
            U64C(0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05)),
     BF128C(U64C(0xe1, 0xae, 0x88, 0x34, 0xca, 0x59, 0x77, 0xec),
@@ -184,27 +186,30 @@ static const bf128_t bf128_alpha[7] = {
     BF128C(U64C(0xbc, 0xf9, 0x36, 0xe1, 0x94, 0x8e, 0x7a, 0x7a),
            U64C(0xe0, 0x8f, 0xb7, 0x4f, 0x1a, 0x31, 0x50, 0x09)),
 };
-bf128_t __attribute__ ((noinline)) bf128_alpha_wrapper(unsigned int i) {
+bf128_t __attribute__ ((noinline)) bf128_alpha_wrapper_offset(unsigned int i) {
   return bf128_alpha[i];
+}
+bf128_t __attribute__ ((noinline)) bf128_alpha_wrapper(unsigned int i) {
+  return bf128_alpha[i+1];
 }
 bf128_t bf128_byte_combine(const bf128_t* x) {
   bf128_t bf_out = x[0];
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul(x[i], bf128_alpha[i - 1]));
+    bf_out = bf128_add(bf_out, bf128_mul(x[i], bf128_alpha[i]));
   }
   return bf_out;
 }
 bf128_t bf128_byte_combine_vk(vbb_t* vbb, unsigned int offset) {
   bf128_t bf_out = *get_vk_128(vbb, offset);
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul(*get_vk_128(vbb, offset + i), bf128_alpha[i - 1]));
+    bf_out = bf128_add(bf_out, bf128_mul(*get_vk_128(vbb, offset + i), bf128_alpha[i]));
   }
   return bf_out;
 }
 bf128_t bf128_byte_combine_vbb(vbb_t* vbb, unsigned int offset) {
   bf128_t bf_out = *get_vole_aes_128(vbb, offset);
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul(*get_vole_aes_128(vbb, offset + i), bf128_alpha[i - 1]));
+    bf_out = bf128_add(bf_out, bf128_mul(*get_vole_aes_128(vbb, offset + i), bf128_alpha[i]));
   }
   return bf_out;
 }
@@ -212,27 +217,17 @@ bf128_t bf128_byte_combine_vbb(vbb_t* vbb, unsigned int offset) {
 bf128_t bf128_byte_combine_vbb_share(vbb_t* vbb, unsigned int offset, int share) {
   bf128_t bf_out = *get_vole_aes_128_share(vbb, offset, share);
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul(*get_vole_aes_128_share(vbb, offset + i, share), bf128_alpha[i - 1]));
+    bf_out = bf128_add(bf_out, bf128_mul(*get_vole_aes_128_share(vbb, offset + i, share), bf128_alpha[i]));
   }
   return bf_out;
 }
 
 bf128_t bf128_byte_combine_bits(uint8_t x) {
-#if defined(HAVE_ATTR_VECTOR_SIZE)
-  return bf128_from_bit(x & 1) ^ bf128_mul_bit(bf128_alpha[1 - 1], (x >> 1) & 1) ^
-         bf128_mul_bit(bf128_alpha[2 - 1], (x >> 2) & 1) ^
-         bf128_mul_bit(bf128_alpha[3 - 1], (x >> 3) & 1) ^
-         bf128_mul_bit(bf128_alpha[4 - 1], (x >> 4) & 1) ^
-         bf128_mul_bit(bf128_alpha[5 - 1], (x >> 5) & 1) ^
-         bf128_mul_bit(bf128_alpha[6 - 1], (x >> 6) & 1) ^
-         bf128_mul_bit(bf128_alpha[7 - 1], (x >> 7) & 1);
-#else
   bf128_t bf_out = bf128_from_bit(x & 1);
   for (unsigned int i = 1; i < 8; ++i) {
-    bf_out = bf128_add(bf_out, bf128_mul_bit(bf128_alpha[i - 1], (x >> i) & 1));
+    bf_out = bf128_add(bf_out, bf128_mul_bit(bf128_alpha[i], (x >> i) & 1));
   }
   return bf_out;
-#endif
 }
 
 bf128_t bf128_rand(void) {

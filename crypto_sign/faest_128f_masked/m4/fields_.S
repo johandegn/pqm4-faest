@@ -13,7 +13,7 @@
 .global bf128_byte_combine_bits_sclf
 bf128_byte_combine_bits_sclf:
     push    {r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
-    sub     sp, #40
+    sub     sp, #44
 
     mov     r9, r1
     str     r0, [sp, #0]
@@ -38,8 +38,18 @@ bf128_byte_combine_bits_sclf:
     ldr     r8, [sp, #32]
 
 
+    mov     r1, #1
+    add     r0, sp, #40
+    bl      rand_mask
+    
+    mov     r0, #0
+    strb    r0, [sp, #41] // store counter
+    ldrb    r4, [sp, #40] // load mask
+    and     r4, r4, #0x7
+    strb    r4, [sp, #40] // store mask mod 8
+
     // bit counter
-    mov     r4, #1
+    //mov     r4, #0
 
 bit_loopr:
     // Random mask for conditional move
@@ -50,8 +60,8 @@ bit_loopr:
 
     // load alpha onto stack
     add     r0, sp, #4
-    sub     r1, r4, #1
-    bl      bf128_alpha_wrapper
+    sub     r1, r4, #0
+    bl      bf128_alpha_wrapper_offset
 
     // load all four alpha words
     ldr     r0, [sp, #4]
@@ -134,14 +144,21 @@ bit_loopr:
     // -r*(X+Y)
     mls     r8, r11, lr, r3
 
-    cmp     r4, #8
-    add     r4, r4, #1
+    ldrb    r0, [sp, #41] // load counter
+    ldrb    r4, [sp, #40] // load mask
+    cmp     r0, #8
+    add     r0, r0, #1
+    strb    r0, [sp, #41] // store counter
+    eor     r4, r4, r0
+
+    //cmp     r4, #8
+    //add     r4, r4, #1
     bne     bit_loopr
 
 
     // Add lsb
-    and     r9, r9, #1
-    eor     r5, r5, r9
+    //and     r9, r9, #1
+    //eor     r5, r5, r9
 
     ldr     r1, [sp, #20]
     ldr     r2, [sp, #24]
@@ -173,5 +190,5 @@ bit_loopr:
     mov     r11, r1
     mov     r12, r1
 
-    add     sp, #40
+    add     sp, #44
     pop     {r4, r5, r6, r7, r8, r9, r10, r11, r12, pc}

@@ -472,15 +472,20 @@ void transpose_vole(vbb_t* vbb, unsigned int idx, uint8_t* cache){
   uint8_t mask = 0;
   rand_mask(&mask, 1);
 
-  uint8_t permutation[16];
-  for (int i = 0; i < 16; i++) {
-    permutation[i] = i;
+  uint32_t masks[16] = {0};
+  uint32_t fixed_mask = 0;
+  rand_mask((uint8_t*)&fixed_mask, 4);
+  rand_mask((uint8_t*)masks, 16*4);
+  
+  uint32_t permutation[16];
+  for(unsigned int i = 0; i < 16; i++){
+    permutation[i] = i^fixed_mask;
   }
-  shuffle_16(permutation);
+  shuffle_16(permutation, masks);
 
   for (unsigned int i = 0; i < vbb->v_buf_size*4; i++){
     unsigned int word = (i^mask) % 4;
-    unsigned int vole = permutation[(i / 4 + i) % 16];
+    unsigned int vole = permutation[(i / 4 + i) % 16]^fixed_mask^masks[(i / 4 + i) % 16];
 
     transpose_vole_asm(cache + word * row_count_bytes * 8 * 4, vbb->v_buf + vole * lambda_bytes + word * 4, vole + idx_relative);
   }

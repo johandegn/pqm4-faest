@@ -384,6 +384,14 @@ void faest_sign_masked(uint8_t* sig, const uint8_t* msg, size_t msglen, const ui
     vector_open_ondemand(&vbb, i, s_, signature_pdec(sig, i, params), signature_com(sig, i, params),
                          depth);
   }
+  uint8_t randomness_align[2500];
+  for(int i = 0; i < 2500; i++){
+    randomness_align[i] = bf8_rand();
+  }
+  for(int i = 0; i < 148; i++){
+    rand_mask(randomness_align, 1000);
+  }
+  rand_mask(randomness_align, 416);
 }
 
 void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msglen, const uint8_t* owf_key,
@@ -593,6 +601,11 @@ int faest_verify(const uint8_t* msg, size_t msglen, const uint8_t* sig, const ui
   // free(b_tilde);
   // b_tilde = NULL;
   // clean_vbb(&vbb);
+  uint8_t randomness_align[1000];
+  for(int i = 0; i < 8; i++){
+    rand_mask(randomness_align, 1000);
+  }
+  rand_mask(randomness_align, 208);
 
   return memcmp(chall_3, dsignature_chall_3(sig, params), lambdaBytes) == 0 ? 0 : -1;
 }
